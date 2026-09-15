@@ -12,8 +12,26 @@ path = "src/main.rs"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"
-rusqlite = { version = "0.33", features = ["bundled-full", "chrono", "uuid"] }
+# 仅启用 bundled：静态编译 SQLite（含 FTS5 全文检索，由 seed/FTS 相关测试实证覆盖）。
+# 未采用 bundled-full，因本项目不使用 rusqlite 的 backup/blob/vtab/functions/session 等扩展能力，
+# 且日期以 TEXT 存储、UUID 经 to_string() 转换，无需 chrono/uuid 类型映射 feature。
+# 精简 feature 可显著缩短编译时间并减小移动端交叉编译产物体积。
+rusqlite = { version = "0.33", features = ["bundled"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.10", features = ["v4", "serde"] }
 csv = "1.3"
 reqwest = { version = "0.12", features = ["json", "blocking"] }
+
+# 发布构建配置（面向移动端静态库交付：AAR / XCFramework）
+[profile.release]
+# 链接时优化：跨 crate 内联与死代码消除，对静态库体积与数值计算吞吐均有收益。
+lto = true
+# 单一代码生成单元：牺牲编译并行度换取更充分的优化与更小体积。
+codegen-units = 1
+# 剥离符号表与调试信息，显著减小随 App 分发的静态库体积。
+strip = true
+# 保持默认 opt-level = 3（而非 "z"）：Kevin Hall ODE 逐日迭代与多项式矩阵为数值密集型热点，
+# 优先保证运行时吞吐与移动端电池效率，体积压缩交由 lto 与 strip 完成。
+#
+# 注意：刻意不设置 panic = "abort"。UniFFI 依赖栈展开（unwind）将 Rust panic
+# 转换为 Swift / Kotlin 侧的可捕获异常；若改为 abort 会导致宿主 App 进程直接崩溃。

@@ -28,34 +28,66 @@ use litebalance_core::storage::{
     FoodRecord, FoodSource, MealType, StorageEngine, UserGoalRecord,
 };
 
+/// 获取轻衡本地数据目录（用户主目录下的 `.litebalance/`），并确保目录已创建。
+///
+/// 目录创建失败时给出明确诊断（如权限不足或磁盘只读），而非留待后续打开数据库时报出无关错误。
+fn get_data_dir() -> PathBuf {
+    let home = env::var("USERPROFILE")
+        .or_else(|_| env::var("HOME"))
+        .unwrap_or_else(|_| ".".to_string());
+    let data_dir = PathBuf::from(&home).join(".litebalance");
+    if let Err(e) = std::fs::create_dir_all(&data_dir) {
+        eprintln!(
+            "错误: 无法创建本地数据目录 {}（{}）。请检查目录权限或磁盘可写状态。",
+            data_dir.display(),
+            e
+        );
+        std::process::exit(1);
+    }
+    data_dir
+}
+
 /// 获取本地 SQLite 数据库的存储路径（位于用户主目录下的 `.litebalance/litebalance.db`）。
 fn get_db_path() -> PathBuf {
-    let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).unwrap_or_else(|_| ".".to_string());
-    let data_dir = PathBuf::from(&home).join(".litebalance");
-    let _ = std::fs::create_dir_all(&data_dir);
-    data_dir.join("litebalance.db")
+    get_data_dir().join("litebalance.db")
 }
 
 /// 打开本地 SQLite 数据库存储引擎，并在初次启动为空时自动载入基础临床参考食物库。
+///
+/// 直接传递 `PathBuf`（存储引擎接受 `AsRef<Path>`），避免 `to_str().unwrap()`
+/// 在包含非 UTF-8 字符的用户主目录路径下发生 panic。
 fn open_app_storage() -> StorageEngine {
     let path = get_db_path();
-    let storage = StorageEngine::open(path.to_str().unwrap()).expect("无法打开本地 SQLite 数据库");
+    let storage = match StorageEngine::open(&path) {
+        Ok(storage) => storage,
+        Err(e) => {
+            eprintln!("错误: 无法打开本地 SQLite 数据库 {}（{}）。", path.display(), e);
+            std::process::exit(1);
+        }
+    };
     let _ = seed_default_foods_if_empty(&storage);
     storage
 }
 
 /// 获取外部网络食品缓存 SQLite 数据库存储路径（位于用户主目录下的 `.litebalance/food_cache.db`）。
 fn get_cache_db_path() -> PathBuf {
-    let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).unwrap_or_else(|_| ".".to_string());
-    let data_dir = PathBuf::from(&home).join(".litebalance");
-    let _ = std::fs::create_dir_all(&data_dir);
-    data_dir.join("food_cache.db")
+    get_data_dir().join("food_cache.db")
 }
 
 /// 打开外部网络食品缓存 SQLite 存储引擎（与用户核心数据库物理完全隔离）。
 fn open_cache_storage() -> CacheStorageEngine {
     let path = get_cache_db_path();
-    CacheStorageEngine::open(path.to_str().unwrap()).expect("无法打开外部网络食品缓存数据库")
+    match CacheStorageEngine::open(&path) {
+        Ok(cache) => cache,
+        Err(e) => {
+            eprintln!(
+                "错误: 无法打开外部网络食品缓存数据库 {}（{}）。",
+                path.display(),
+                e
+            );
+            std::process::exit(1);
+        }
+    }
 }
 
 /// 打印工作台欢迎横幅。
@@ -906,18 +938,35 @@ fn handle_import(args: &[String]) {
         return;
     }
     let path = &args[0];
-    let content = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("读取失败: {}", e));
+    let content = match std::fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(e) => {
+            eprintln!("错误: 读取备份文件 {} 失败（{}）。", path, e);
+            std::process::exit(1);
+        }
+    };
     let storage = open_app_storage();
-    let backup: NutriTrackerBackup =
-        serde_json::from_str(&content).unwrap_or_else(|e| panic!("解析原生备份失败: {}", e));
-    let stats =
-        ExportImportEngine::import_native_backup(&storage, &backup).expect("原生数据还原失败");
+    let backup: NutriTrackerBackup = match serde_json::from_str(&content) {
+        Ok(backup) => backup,
+        Err(e) => {
+            eprintln!("错误: 解析原生备份失败（{}）。请确认文件为 litebalance export 生成的 JSON 备份。", e);
+            std::process::exit(1);
+        }
+    };
+    let stats = match ExportImportEngine::import_native_backup(&storage, &backup) {
+        Ok(stats) => stats,
+        Err(e) => {
+            eprintln!("错误: 原生数据还原失败（{}）。", e);
+            std::process::exit(1);
+        }
+    };
     println!(
-        "导入完成: foods={}, intakes={}, weights={}, waters={}, errors={}",
+        "导入完成: foods={}, intakes={}, weights={}, waters={}, recipes={}, errors={}",
         stats.foods_imported,
         stats.intakes_imported,
         stats.weights_imported,
         stats.waters_imported,
+        stats.recipes_imported,
         stats.errors.len()
     );
     for e in stats.errors {

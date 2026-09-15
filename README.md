@@ -29,6 +29,16 @@ cargo test
 cargo run -- --help
 ```
 
+质量校验（与 CI 一致）：
+
+```bash
+cargo test --all-targets
+# 必须带 --all-targets，否则不检查 #[cfg(test)] 测试代码中的 lint
+cargo clippy --all-targets -- -D warnings
+```
+
+> 构建要求：Rust **1.85+**（本项目使用 edition 2024）。
+
 示例：
 
 ```bash

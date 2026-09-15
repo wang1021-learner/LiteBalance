@@ -19,6 +19,16 @@ pub struct StorageEngine {
 }
 
 impl StorageEngine {
+    /// 安全获取数据库连接互斥锁。
+    ///
+    /// 相比 `lock().unwrap()`，锁中毒时返回 [`StorageError::LockPoisoned`] 而非 panic，
+    /// 避免 panic 跨越移动端 UniFFI 边界导致宿主 App 进程整体崩溃。
+    fn conn(&self) -> Result<std::sync::MutexGuard<'_, Connection>, StorageError> {
+        self.conn
+            .lock()
+            .map_err(|e| StorageError::LockPoisoned(e.to_string()))
+    }
+
     /// 打开内存 SQLite 数据库（单元测试与临时调试专用）。
     pub fn open_in_memory() -> Result<Self, StorageError> {
         let conn = Connection::open_in_memory()?;
@@ -34,6 +44,10 @@ impl StorageEngine {
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, StorageError> {
         let conn = Connection::open(path)?;
         let _ = conn.query_row("PRAGMA journal_mode = WAL;", [], |_| Ok(()));
+        // WAL 模式下配合 synchronous = NORMAL：官方推荐组合，仍可防止崩溃与断电导致的数据库损坏
+        // （最坏情况仅丢失最近若干已提交事务），显著减少批量写入（导入备份、批量打卡）时的 fsync 次数，
+        // 对移动端闪存寿命与写入延迟均有明显收益。
+        let _ = conn.pragma_update(None, "synchronous", "NORMAL");
         let _ = conn.query_row("PRAGMA foreign_keys = ON;", [], |_| Ok(()));
         let engine = Self {
             conn: Arc::new(Mutex::new(conn)),
@@ -44,7 +58,7 @@ impl StorageEngine {
 
     /// 初始化数据库架构、建表、索引与 FTS5 触发器。
     pub fn init_schema(&self) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute_batch(CREATE_SCHEMA_SQL)?;
         Ok(())
     }
@@ -57,7 +71,7 @@ impl StorageEngine {
         birthday: &str,
         profile: &crate::models::UserProfile,
     ) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let (gender_str, hormone_str) = match profile.gender {
             crate::models::Gender::Male => ("male", None),
             crate::models::Gender::Female => ("female", None),
@@ -112,7 +126,7 @@ impl StorageEngine {
         food: &FoodRecord,
         nutriments: &Nutriments100g,
     ) -> Result<(), StorageError> {
-        let mut conn = self.conn.lock().unwrap();
+        let mut conn = self.conn()?;
         let tx = conn.transaction()?;
 
         // 1. 插入或更新食品基础元数据
@@ -188,7 +202,7 @@ impl StorageEngine {
     /// 1. 优先使用 SQLite FTS5 全文索引执行分词与前缀匹配（英文字根与前缀毫秒级响应并按 rank 排序）；
     /// 2. 当无空格中文词或子串未完全覆盖 limit 时，自动降级并联多词子串匹配，完美支持“去皮无骨鸡胸肉”中匹配“鸡胸肉”。
     pub fn search_foods_fts(&self, query: &str, limit: usize) -> Result<Vec<FoodRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let trimmed = query.trim();
         if trimmed.is_empty() {
             return Ok(Vec::new());
@@ -296,7 +310,7 @@ impl StorageEngine {
         &self,
         id: &str,
     ) -> Result<Option<(FoodRecord, Nutriments100g)>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT f.id, f.name, f.brand, f.source, f.serving_quantity, f.serving_unit, f.image_url,
@@ -379,7 +393,7 @@ impl StorageEngine {
 
         let intake_id = Uuid::new_v4().to_string();
 
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             r#"
             INSERT INTO intake_logs (
@@ -420,7 +434,7 @@ impl StorageEngine {
 
     /// 删除指定用户的某笔食物摄入打卡日志。
     pub fn delete_intake(&self, user_id: &str, intake_id: &str) -> Result<bool, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let affected = conn.execute(
             "DELETE FROM intake_logs WHERE id = ?1 AND user_id = ?2",
             params![intake_id, user_id],
@@ -436,7 +450,7 @@ impl StorageEngine {
         new_amount: f64,
         new_meal_type: Option<MealType>,
     ) -> Result<bool, StorageError> {
-        let mut conn = self.conn.lock().unwrap();
+        let mut conn = self.conn()?;
         let tx = conn.transaction()?;
 
         // 1. 获取原记录的 food_id
@@ -520,7 +534,7 @@ impl StorageEngine {
         user_id: &str,
         date_prefix: &str, // 例如 "2026-09-14"
     ) -> Result<DailySummary, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let pattern = format!("{}%", date_prefix);
 
         let mut stmt = conn.prepare(
@@ -600,7 +614,7 @@ impl StorageEngine {
         let (start_iso, end_iso) =
             crate::calc::DayBoundaryEngine::get_logical_day_sql_range(date, boundary_offset_minutes);
 
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT l.id, l.user_id, l.food_id, f.name, l.amount, l.unit, l.meal_type, l.consumed_at,
@@ -663,7 +677,7 @@ impl StorageEngine {
         amount_ml: u32,
         logged_at: &str, // ISO-8601 格式 YYYY-MM-DDTHH:MM:SS
     ) -> Result<String, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let log_id = Uuid::new_v4().to_string();
         conn.execute(
             r#"
@@ -682,7 +696,7 @@ impl StorageEngine {
         date_prefix: &str, // 例如 "2026-09-14"
         goal_ml: u32,
     ) -> Result<crate::calc::water::DailyWaterSummary, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let pattern = format!("{}%", date_prefix);
 
         let mut stmt = conn.prepare(
@@ -703,7 +717,7 @@ impl StorageEngine {
 
     /// 删除指定用户的某笔饮水打卡记录。
     pub fn delete_water_log(&self, user_id: &str, log_id: &str) -> Result<bool, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let affected = conn.execute(
             "DELETE FROM water_logs WHERE id = ?1 AND user_id = ?2",
             params![log_id, user_id],
@@ -718,7 +732,7 @@ impl StorageEngine {
         started_at: &str,
         target_minutes: u32,
     ) -> Result<String, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let session_id = Uuid::new_v4().to_string();
         conn.execute(
             r#"
@@ -735,7 +749,7 @@ impl StorageEngine {
         &self,
         user_id: &str,
     ) -> Result<Option<(String, chrono::DateTime<chrono::Utc>, u32)>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, started_at, target_duration_minutes
@@ -762,7 +776,7 @@ impl StorageEngine {
 
     /// 将活跃断食会话标记为正常圆满结束。
     pub fn complete_fasting(&self, session_id: &str, completed_at: &str) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             "UPDATE fasting_sessions SET completed_at = ?1 WHERE id = ?2",
             params![completed_at, session_id],
@@ -772,7 +786,7 @@ impl StorageEngine {
 
     /// 将活跃断食会话标记为已取消/放弃。
     pub fn cancel_fasting(&self, session_id: &str, cancelled_at: &str) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             "UPDATE fasting_sessions SET cancelled_at = ?1 WHERE id = ?2",
             params![cancelled_at, session_id],
@@ -782,7 +796,7 @@ impl StorageEngine {
 
     /// 删除指定用户的某个断食会话记录。
     pub fn delete_fasting_session(&self, user_id: &str, session_id: &str) -> Result<bool, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let affected = conn.execute(
             "DELETE FROM fasting_sessions WHERE id = ?1 AND user_id = ?2",
             params![session_id, user_id],
@@ -815,7 +829,7 @@ impl StorageEngine {
 
         let now_str = chrono::Utc::now().to_rfc3339();
 
-        let mut conn = self.conn.lock().unwrap();
+        let mut conn = self.conn()?;
         let tx = conn.transaction()?;
 
         // 1. 插入或更新 recipes 主表
@@ -955,7 +969,7 @@ impl StorageEngine {
         &self,
         recipe_id: &str,
     ) -> Result<Option<crate::storage::models::RecipeWithDetails>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
 
         // 1. 获取食谱基本信息
         let mut stmt = conn.prepare(
@@ -1097,7 +1111,7 @@ impl StorageEngine {
         &self,
         user_id: &str,
     ) -> Result<Vec<crate::storage::models::RecipeRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, user_id, name, description, servings, total_weight_g, created_at
@@ -1143,7 +1157,7 @@ impl StorageEngine {
 
     /// 删除食谱及其原料明细与关联注册的虚拟食物项。
     pub fn delete_recipe(&self, recipe_id: &str) -> Result<(), StorageError> {
-        let mut conn = self.conn.lock().unwrap();
+        let mut conn = self.conn()?;
         let tx = conn.transaction()?;
         tx.execute("DELETE FROM recipes WHERE id = ?1", params![recipe_id])?;
         tx.execute("DELETE FROM foods WHERE id = ?1", params![recipe_id])?;
@@ -1160,7 +1174,7 @@ impl StorageEngine {
         logged_at: &str, // YYYY-MM-DDTHH:MM:SS
         notes: Option<&str>,
     ) -> Result<String, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let log_id = Uuid::new_v4().to_string();
         conn.execute(
             r#"
@@ -1174,7 +1188,7 @@ impl StorageEngine {
 
     /// 删除指定用户的某笔体重打卡记录。
     pub fn delete_weight_log(&self, user_id: &str, log_id: &str) -> Result<bool, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let affected = conn.execute(
             "DELETE FROM weight_logs WHERE id = ?1 AND user_id = ?2",
             params![log_id, user_id],
@@ -1188,7 +1202,7 @@ impl StorageEngine {
         user_id: &str,
         limit: usize,
     ) -> Result<Vec<(chrono::NaiveDate, f64)>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT SUBSTR(logged_at, 1, 10) as day_str, AVG(weight_kg)
@@ -1221,7 +1235,7 @@ impl StorageEngine {
         user_id: &str,
         limit_days: usize,
     ) -> Result<Vec<(f64, f64, f64, f64)>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT SUBSTR(consumed_at, 1, 10) as day_str,
@@ -1254,7 +1268,7 @@ impl StorageEngine {
 
     /// 确保指定用户存在于 users 表中；若不存在则自动插入默认用户档案。
     pub fn ensure_user_exists(&self, user_id: &str) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             r#"
             INSERT OR IGNORE INTO users (id, name, birthday, height_cm, weight_kg, gender, activity_level)
@@ -1267,7 +1281,7 @@ impl StorageEngine {
 
     /// 根据用户 ID 获取用户档案记录。
     pub fn get_user(&self, user_id: &str) -> Result<Option<UserProfileRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, name, birthday, height_cm, weight_kg, gender, hormone_profile, activity_level
@@ -1294,7 +1308,7 @@ impl StorageEngine {
 
     /// 列出所有已注册用户的生理档案记录。
     pub fn list_all_users(&self) -> Result<Vec<UserProfileRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, name, birthday, height_cm, weight_kg, gender, hormone_profile, activity_level
@@ -1323,14 +1337,14 @@ impl StorageEngine {
 
     /// 级联彻底删除指定用户及其所有打卡数据（摄入、体重、饮水、断食、食谱、运动、目标）。
     pub fn delete_all_user_data(&self, user_id: &str) -> Result<bool, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let affected = conn.execute("DELETE FROM users WHERE id = ?1", params![user_id])?;
         Ok(affected > 0)
     }
 
     /// 列出数据库中所有食物及其完整每100g营养素明细。
     pub fn list_all_foods(&self) -> Result<Vec<FoodWithNutriments>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT f.id, f.name, f.brand, f.source, f.serving_quantity, f.serving_unit, f.image_url,
@@ -1394,7 +1408,7 @@ impl StorageEngine {
 
     /// 查询所有用户本地自建食物列表。
     pub fn list_custom_foods(&self) -> Result<Vec<FoodWithNutriments>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT f.id, f.name, f.brand, f.source, f.serving_quantity, f.serving_unit, f.image_url,
@@ -1459,7 +1473,7 @@ impl StorageEngine {
 
     /// 删除指定的用户自建食物（同时级联清除其营养素与 FTS5 索引）。
     pub fn delete_custom_food(&self, food_id: &str) -> Result<bool, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let affected = conn.execute(
             "DELETE FROM foods WHERE id = ?1 AND source = 'custom'",
             params![food_id],
@@ -1469,7 +1483,7 @@ impl StorageEngine {
 
     /// 按摄入时间升序列出指定用户的所有饮食摄入打卡日志。
     pub fn list_all_intakes(&self, user_id: &str) -> Result<Vec<IntakeLogRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT l.id, l.user_id, l.food_id, f.name, l.amount, l.unit, l.meal_type, l.consumed_at,
@@ -1506,7 +1520,7 @@ impl StorageEngine {
 
     /// 按打卡时间升序列出指定用户的所有体重打卡记录。
     pub fn list_all_weights(&self, user_id: &str) -> Result<Vec<WeightLogRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, user_id, logged_at, weight_kg, body_fat_pct, notes
@@ -1534,7 +1548,7 @@ impl StorageEngine {
 
     /// 按记录时间升序列出指定用户的所有饮水打卡记录。
     pub fn list_all_waters(&self, user_id: &str) -> Result<Vec<WaterLogRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, user_id, logged_at, amount_ml
@@ -1560,7 +1574,7 @@ impl StorageEngine {
 
     /// 按开始时间升序列出指定用户的所有断食会话记录。
     pub fn list_all_fasting(&self, user_id: &str) -> Result<Vec<FastingSessionRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, user_id, started_at, target_duration_minutes, completed_at, cancelled_at
@@ -1592,7 +1606,7 @@ impl StorageEngine {
         user_id: &str,
         date: &str,
     ) -> Result<Vec<(f64, Nutriments100g)>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT l.amount,
@@ -1650,7 +1664,7 @@ impl StorageEngine {
 
     /// 插入或更新用户生理档案原始记录。
     pub fn insert_user_raw(&self, user: &UserProfileRecord) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             r#"
             INSERT INTO users (id, name, birthday, height_cm, weight_kg, gender, hormone_profile, activity_level)
@@ -1686,7 +1700,7 @@ impl StorageEngine {
 
     /// 插入或更新饮食摄入打卡原始记录。
     pub fn insert_intake_log_raw(&self, record: &IntakeLogRecord) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             r#"
             INSERT INTO intake_logs (
@@ -1723,7 +1737,7 @@ impl StorageEngine {
 
     /// 插入或更新体重打卡原始记录。
     pub fn insert_weight_log_raw(&self, record: &WeightLogRecord) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             r#"
             INSERT INTO weight_logs (id, user_id, logged_at, weight_kg, body_fat_pct, notes)
@@ -1748,7 +1762,7 @@ impl StorageEngine {
 
     /// 插入或更新饮水打卡原始记录。
     pub fn insert_water_log_raw(&self, record: &WaterLogRecord) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             r#"
             INSERT INTO water_logs (id, user_id, logged_at, amount_ml)
@@ -1768,7 +1782,7 @@ impl StorageEngine {
 
     /// 插入或更新断食会话原始记录。
     pub fn insert_fasting_session_raw(&self, record: &FastingSessionRecord) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             r#"
             INSERT INTO fasting_sessions (id, user_id, started_at, target_duration_minutes, completed_at, cancelled_at)
@@ -1798,7 +1812,7 @@ impl StorageEngine {
 
     /// 插入或更新运动打卡原始记录。
     pub fn insert_activity_raw(&self, record: &ActivityLogRecord) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             r#"
             INSERT INTO activity_logs (
@@ -1844,7 +1858,7 @@ impl StorageEngine {
         user_id: &str,
         date: &str,
     ) -> Result<Vec<ActivityLogRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, user_id, activity_code, activity_name, category,
@@ -1883,7 +1897,7 @@ impl StorageEngine {
 
     /// 列出指定用户的所有运动打卡记录（按时间升序）。
     pub fn list_all_activities(&self, user_id: &str) -> Result<Vec<ActivityLogRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, user_id, activity_code, activity_name, category,
@@ -1926,7 +1940,7 @@ impl StorageEngine {
         user_id: &str,
         external_id: &str,
     ) -> Result<Option<ActivityLogRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, user_id, activity_code, activity_name, category,
@@ -1961,7 +1975,7 @@ impl StorageEngine {
 
     /// 删除指定运动打卡记录。
     pub fn delete_activity(&self, user_id: &str, activity_id: &str) -> Result<bool, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let count = conn.execute(
             "DELETE FROM activity_logs WHERE id = ?1 AND user_id = ?2",
             params![activity_id, user_id],
@@ -1975,7 +1989,7 @@ impl StorageEngine {
         user_id: &str,
         date: &str,
     ) -> Result<(f64, f64), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT COALESCE(SUM(gross_burned_kcal), 0.0), COALESCE(SUM(net_credited_kcal), 0.0)
@@ -1994,7 +2008,7 @@ impl StorageEngine {
     /// 设置或更新用户的体态目标配置（每个用户仅有一条生效目标记录）。
     pub fn set_user_goal(&self, goal: &UserGoalRecord) -> Result<(), StorageError> {
         self.ensure_user_exists(&goal.user_id)?;
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         conn.execute(
             r#"
             INSERT INTO user_goals (
@@ -2030,7 +2044,7 @@ impl StorageEngine {
 
     /// 获取用户的当前活跃目标配置（若存在）。
     pub fn get_user_goal(&self, user_id: &str) -> Result<Option<UserGoalRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT id, user_id, kind, target_weight_kg, weekly_rate_kg,
@@ -2064,7 +2078,7 @@ impl StorageEngine {
 
     /// 删除指定用户的目标配置。
     pub fn delete_user_goal(&self, user_id: &str) -> Result<bool, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let count = conn.execute("DELETE FROM user_goals WHERE user_id = ?1", params![user_id])?;
         Ok(count > 0)
     }

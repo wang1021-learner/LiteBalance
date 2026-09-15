@@ -1,0 +1,52 @@
+name: CI
+
+# 防止“文档声称零警告、实际未通过”这类回归：
+# 测试与 Clippy 严格模式在每次推送与 PR 时强制执行。
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: 测试与静态检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # edition 2024 要求 Rust >= 1.85；显式固定工具链避免 runner 镜像漂移导致构建失败。
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.85.0
+          components: clippy
+
+      - name: 缓存 cargo 构建产物
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      # 说明：暂未纳入 `cargo fmt --check`。现有代码库存在约 273 处与 rustfmt 默认风格的差异
+      # （多为刻意保留的较宽单行），若强制启用会产生覆盖全库的格式化 diff 并淹没实质变更。
+      # 如需纳入，建议单独提交一次全库格式化后再在此处开启该检查。
+
+      # 必须带 --all-targets：否则 #[cfg(test)] 测试代码中的 lint 会被漏检。
+      - name: Clippy 严格模式（零警告）
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: 运行测试套件
+        run: cargo test --all-targets
+
+      # 校验发布配置（lto / codegen-units / strip）可正常构建，
+      # 避免移动端交付阶段才发现 release 构建失败。
+      - name: 校验 release 构建
+        run: cargo build --release

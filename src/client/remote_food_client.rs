@@ -416,7 +416,7 @@ mod tests {
         let err = limiter.acquire();
         assert!(err.is_err());
         let wait_secs = err.unwrap_err();
-        assert!(wait_secs >= 1 && wait_secs <= 60);
+        assert!((1..=60).contains(&wait_secs));
     }
 
     #[test]

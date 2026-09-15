@@ -20,4 +20,11 @@ pub enum StorageError {
     /// 数据库版本迁移异常
     #[error("数据库结构版本迁移失败: {0}")]
     Migration(String),
+
+    /// 数据库连接互斥锁中毒（此前持锁线程发生 panic）
+    ///
+    /// 该变体确保锁中毒时以可恢复错误的形式向调用方（含移动端 FFI 边界）返回，
+    /// 而非在库内部直接 panic 引发跨语言边界的进程级崩溃。
+    #[error("数据库连接锁已中毒（此前持锁线程发生 panic）: {0}")]
+    LockPoisoned(String),
 }

@@ -1,5 +1,10 @@
 # Walkthrough: Data Migration, Clinical DRI Radar, and Periodic Analytics
 
+> **阅读说明**：本文件是**按里程碑累积的历史交付与验证记录**，文中各节的测试计数（如 52 / 52、56 / 56）
+> 反映的是**该节撰写当时**的状态，并非当前仓库现状。
+> 当前最新指标：**77 项测试全部通过**，`cargo clippy --all-targets -- -D warnings` 零警告通过。
+> 权威的现状描述请以 `README.md` 与 `PROJECT_INTRODUCTION.md` 为准，或直接运行 CI（`.github/workflows/ci.yml`）。
+
 We have completed the implementation, verification, and CLI integration for the three requested non-AI core subsystems in `nutritracker-core`:
 1. **Data Import & Export Layer** (`export_import.rs`)
 2. **Clinical Micronutrient DRI Evaluation Engine** (`micronutrient_eval.rs`)

@@ -62,8 +62,20 @@ pub struct CacheStorageEngine {
 }
 
 impl CacheStorageEngine {
+    /// 安全获取缓存数据库连接互斥锁。
+    ///
+    /// 锁中毒时返回 [`StorageError::LockPoisoned`] 而非 panic，避免崩溃跨越移动端 FFI 边界。
+    fn conn(&self) -> Result<std::sync::MutexGuard<'_, Connection>, StorageError> {
+        self.conn
+            .lock()
+            .map_err(|e| StorageError::LockPoisoned(e.to_string()))
+    }
+
     /// 打开或新建指定路径的独立缓存 SQLite 数据库文件。
-    pub fn open(db_path: &str) -> Result<Self, StorageError> {
+    ///
+    /// 接受 `AsRef<Path>`，使调用方可直接传入 `PathBuf`，
+    /// 无需 `to_str().unwrap()`（该转换在非 UTF-8 路径下会 panic）。
+    pub fn open<P: AsRef<std::path::Path>>(db_path: P) -> Result<Self, StorageError> {
         let conn = Connection::open(db_path)?;
         Self::init_connection(conn)
     }
@@ -109,7 +121,7 @@ impl CacheStorageEngine {
     /// 根据条形码（或 EAN-13）查询未过期的本地缓存食品记录。
     /// 若命中但已超过 TTL 有效期，则返回 `None`。
     pub fn get_cached_food(&self, barcode_query: &str) -> Result<Option<CachedFoodRecord>, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT barcode, ean13, food_name, brand, serving_quantity, serving_unit,
@@ -159,7 +171,7 @@ impl CacheStorageEngine {
 
     /// 将远程查询结果持久化写入本地缓存库中。
     pub fn save_cached_food(&self, record: &CachedFoodRecord) -> Result<(), StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let nutriments_json = serde_json::to_string(&record.nutriments)
             .map_err(|e| StorageError::Conversion(format!("序列化营养素 JSON 失败: {}", e)))?;
 
@@ -202,7 +214,7 @@ impl CacheStorageEngine {
 
     /// 驱逐并物理删除所有已过期的缓存条目。
     pub fn evict_expired(&self) -> Result<usize, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare("SELECT barcode, cached_at, ttl_seconds FROM remote_food_cache")?;
         let rows = stmt.query_map([], |row| {
             Ok((
@@ -233,14 +245,14 @@ impl CacheStorageEngine {
 
     /// 清空全部网络缓存数据（不影响任何用户核心私有数据）。
     pub fn clear_all(&self) -> Result<usize, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let count = conn.execute("DELETE FROM remote_food_cache", [])?;
         Ok(count)
     }
 
     /// 获取当前外部缓存数据库的运行指标。
     pub fn get_cache_stats(&self) -> Result<CacheStats, StorageError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn()?;
         let mut stmt = conn.prepare("SELECT cached_at, ttl_seconds FROM remote_food_cache")?;
         let rows = stmt.query_map([], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))

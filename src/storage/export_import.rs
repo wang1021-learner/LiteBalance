@@ -147,22 +147,43 @@ impl ExportImportEngine {
         }
 
         for recipe in &backup.recipes {
-            let ingredient_inputs: Vec<crate::calc::recipe::RecipeIngredientInput> = recipe
-                .ingredients
-                .iter()
-                .filter_map(|i| {
-                    let food_tuple = storage.get_food_with_nutriments(&i.food_id).ok()??;
-                    Some(crate::calc::recipe::RecipeIngredientInput::simple(
-                        &i.food_id,
-                        &i.food_name,
-                        i.amount,
-                        &i.unit,
-                        food_tuple.1,
-                    ))
-                })
-                .collect();
+            // 逐原料解析：缺失食物不再静默丢弃，而是记入 stats.errors 供调用方与用户感知。
+            let mut ingredient_inputs: Vec<crate::calc::recipe::RecipeIngredientInput> =
+                Vec::with_capacity(recipe.ingredients.len());
+            for i in &recipe.ingredients {
+                match storage.get_food_with_nutriments(&i.food_id) {
+                    Ok(Some(food_tuple)) => {
+                        ingredient_inputs.push(crate::calc::recipe::RecipeIngredientInput::simple(
+                            &i.food_id,
+                            &i.food_name,
+                            i.amount,
+                            &i.unit,
+                            food_tuple.1,
+                        ));
+                    }
+                    Ok(None) => stats.errors.push(format!(
+                        "食谱「{}」的原料「{}」引用的食物 {} 不存在于食物库，该原料已跳过",
+                        recipe.recipe.name, i.food_name, i.food_id
+                    )),
+                    Err(e) => stats.errors.push(format!(
+                        "食谱「{}」的原料「{}」读取失败（{}），该原料已跳过",
+                        recipe.recipe.name, i.food_name, e
+                    )),
+                }
+            }
 
-            let _ = storage.save_recipe(
+            // 原料全部缺失时跳过该食谱，避免写入营养数据全空的残缺食谱污染用户数据。
+            if ingredient_inputs.is_empty() && !recipe.ingredients.is_empty() {
+                stats.errors.push(format!(
+                    "食谱「{}」的全部 {} 项原料均无法解析，已跳过该食谱",
+                    recipe.recipe.name,
+                    recipe.ingredients.len()
+                ));
+                continue;
+            }
+
+            // 保存结果不再被忽略：仅在真正落库成功后才递增计数，保证统计数字与实际写入一致。
+            match storage.save_recipe(
                 &recipe.recipe.user_id,
                 Some(&recipe.recipe.id),
                 &recipe.recipe.name,
@@ -170,8 +191,13 @@ impl ExportImportEngine {
                 recipe.recipe.servings,
                 Some(recipe.recipe.total_weight_g),
                 &ingredient_inputs,
-            );
-            stats.recipes_imported += 1;
+            ) {
+                Ok(_) => stats.recipes_imported += 1,
+                Err(e) => stats.errors.push(format!(
+                    "食谱「{}」保存失败: {}",
+                    recipe.recipe.name, e
+                )),
+            }
         }
 
         if let Some(goal) = &backup.goal {
@@ -181,10 +207,6 @@ impl ExportImportEngine {
 
         Ok(stats)
     }
-
-    /// 从历史导出的 `user_intake.json` 文件恢复饮食历史
-
-    /// 从历史导出的 `weight_log.json` 文件恢复体重历史
 
     /// 将用户的饮食摄入历史导出为 RFC-4180 标准 CSV 文件
     pub fn export_intakes_csv(
@@ -308,7 +330,85 @@ impl ExportImportEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::models::{FoodRecord, FoodSource, MealType, Nutriments100g};
+    use crate::storage::models::{
+        FoodRecord, FoodSource, MealType, Nutriments100g, RecipeIngredientRecord, RecipeRecord,
+        RecipeWithDetails,
+    };
+
+    /// 回归测试：食谱原料引用了食物库中不存在的食物时，
+    /// 必须记入 `stats.errors` 并跳过该食谱，而非静默丢弃原料后仍报告导入成功。
+    #[test]
+    fn test_import_reports_missing_recipe_ingredients_instead_of_silent_loss() {
+        let storage = StorageEngine::open_in_memory().unwrap();
+        let user_id = "user-dangling-recipe";
+
+        storage
+            .insert_user_raw(&UserProfileRecord {
+                id: user_id.into(),
+                name: "Carol".into(),
+                birthday: "1992-03-08".into(),
+                height_cm: 165.0,
+                weight_kg: 58.0,
+                gender: "female".into(),
+                hormone_profile: None,
+                activity_level: "low_active".into(),
+            })
+            .unwrap();
+
+        // 构造一个原料指向不存在食物 ID 的备份（模拟跨设备迁移时食物库缺失的真实场景）
+        let backup = NutriTrackerBackup {
+            version: 1,
+            exported_at: "2026-05-14T12:00:00Z".into(),
+            user: None,
+            foods: vec![],
+            intakes: vec![],
+            weights: vec![],
+            waters: vec![],
+            fasting: vec![],
+            activities: vec![],
+            recipes: vec![RecipeWithDetails {
+                recipe: RecipeRecord {
+                    id: "recipe-dangling".into(),
+                    user_id: user_id.into(),
+                    name: "番茄牛腩汤".into(),
+                    description: None,
+                    servings: 2.0,
+                    total_weight_g: 800.0,
+                    created_at: "2026-05-14T11:00:00Z".into(),
+                },
+                ingredients: vec![RecipeIngredientRecord {
+                    id: "ing-1".into(),
+                    recipe_id: "recipe-dangling".into(),
+                    food_id: "food-does-not-exist".into(),
+                    food_name: "牛腩".into(),
+                    amount: 400.0,
+                    unit: "g".into(),
+                    converted_amount_g: 400.0,
+                }],
+                per_100g: Nutriments100g::simple(90.0, 3.0, 8.0, 4.0),
+                per_serving: Nutriments100g::simple(360.0, 12.0, 32.0, 16.0),
+            }],
+            goal: None,
+        };
+
+        let stats = ExportImportEngine::import_native_backup(&storage, &backup).unwrap();
+
+        // 该食谱不应被计为成功导入
+        assert_eq!(stats.recipes_imported, 0);
+        // 必须留下可诊断的错误记录，而非静默丢失
+        assert!(
+            stats.errors.iter().any(|e| e.contains("food-does-not-exist")),
+            "缺失原料应记入 errors，实际: {:?}",
+            stats.errors
+        );
+        assert!(
+            stats.errors.iter().any(|e| e.contains("番茄牛腩汤")),
+            "错误信息应标明受影响的食谱名，实际: {:?}",
+            stats.errors
+        );
+        // 残缺食谱不应落库污染用户数据
+        assert!(storage.get_recipe("recipe-dangling").unwrap().is_none());
+    }
 
     #[test]
     fn test_native_backup_and_restore() {
