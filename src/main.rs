@@ -224,7 +224,13 @@ fn handle_plan(args: &[String]) {
         _ => ActivityLevel::Active,
     };
 
-    let profile = UserProfile::new(age, height, weight, gender, activity).expect("无效的用户生理档案参数");
+    let profile = match UserProfile::new(age, height, weight, gender, activity) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("错误: 无效的用户生理档案参数（{}）。", e);
+            std::process::exit(1);
+        }
+    };
 
     println!("\n=======================================================");
     println!("  临床代谢评估与 NIH KEVIN HALL 动态体重规划");
@@ -241,7 +247,16 @@ fn handle_plan(args: &[String]) {
     );
 
     // 1. 能量代谢计算（NASEM 2023 DRI 对比老版 IOM 2005）
-    let comp = EnergyCalc::compare(&profile);
+    let comp = match EnergyCalc::compare(&profile) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!(
+                "错误: 无法计算能量需求（{}）。当前仅支持 ≥19 岁且非孕非哺成人。",
+                e
+            );
+            std::process::exit(1);
+        }
+    };
     println!("\n--- 1. 每日总能量消耗 (TDEE) 与基础代谢 ---");
     println!(
         "  * NASEM 2023 DRI:  {:.0} kcal/天 (基于 IAEA 双标水数据库更新回归模型)",
@@ -264,23 +279,28 @@ fn handle_plan(args: &[String]) {
                 daily_intake,
                 daily_intake - comp.nasem_2023_kcal
             );
-            let sim = DynamicWeightPlanner::simulate(&profile, None, *daily_intake, days as usize, Some(target_weight));
-            println!(
-                "  * 预测周期末体重: {:.2} kg (总变化量: {:+.2} kg)",
-                sim.final_weight_kg, sim.total_weight_change_kg
-            );
-            println!(
-                "  * 体成分变化划分: 脂肪组织 {:+.2} kg | 瘦体重 (FFM) {:+.2} kg",
-                sim.fat_mass_change_kg, sim.fat_free_mass_change_kg
-            );
-            println!(
-                "  * 适应性产热效应: -{:.1} kcal/天 (代谢适应下调)",
-                sim.metabolic_adaptation_kcal
-            );
-            println!(
-                "  * 传统 7700kcal 规则偏差: 传统线性规则虚高夸大减重达 {:.2} kg",
-                sim.wishnofsky_overestimate_kg
-            );
+            match DynamicWeightPlanner::simulate(&profile, None, *daily_intake, days as usize, Some(target_weight))
+            {
+                Ok(sim) => {
+                    println!(
+                        "  * 预测周期末体重: {:.2} kg (总变化量: {:+.2} kg)",
+                        sim.final_weight_kg, sim.total_weight_change_kg
+                    );
+                    println!(
+                        "  * 体成分变化划分: 脂肪组织 {:+.2} kg | 瘦体重 (FFM) {:+.2} kg",
+                        sim.fat_mass_change_kg, sim.fat_free_mass_change_kg
+                    );
+                    println!(
+                        "  * 适应性产热效应: -{:.1} kcal/天 (代谢适应下调)",
+                        sim.metabolic_adaptation_kcal
+                    );
+                    println!(
+                        "  * 传统 7700kcal 规则偏差: 传统线性规则虚高夸大减重达 {:.2} kg",
+                        sim.wishnofsky_overestimate_kg
+                    );
+                }
+                Err(e) => println!("  * 动态仿真提示: {}", e),
+            }
         }
         Err(e) => {
             println!("  * 规划求解器提示: {}", e);
@@ -1475,7 +1495,16 @@ fn handle_balance(args: &[String]) {
     let user_id = "default_user";
 
     let profile = get_or_create_default_profile(&storage);
-    let base_tdee = EnergyCalc::nasem_2023(&profile).round();
+    let base_tdee = match EnergyCalc::nasem_2023(&profile) {
+        Ok(v) => v.round(),
+        Err(e) => {
+            eprintln!(
+                "错误: 无法计算基础 TDEE（{}）。当前仅支持 ≥19 岁且非孕非哺成人。",
+                e
+            );
+            std::process::exit(1);
+        }
+    };
 
     let summary = storage
         .get_daily_summary_with_boundary(user_id, &date, boundary_offset)
@@ -1563,22 +1592,29 @@ fn handle_balance(args: &[String]) {
             adaptive_enabled: goal_rec.adaptive_enabled,
             manual_calorie_offset: goal_rec.manual_calorie_offset,
         };
-        let budget_res = GoalProfileEngine::compute_adaptive_budget(&profile, &goal_config, &[]);
-        println!("\n--- 5. 目标动态预算与摄入依从度 ---");
-        println!(
-            "  * 设定体态目标:          {} (每周速率 {:+.2} kg/周)",
-            goal_config.kind.display_name(),
-            goal_config.weekly_rate_kg
-        );
-        println!("  * 今日动态摄入预算:      {:.0} kcal", budget_res.daily_budget_kcal);
-        let diff = balance.total_intake_kcal - budget_res.daily_budget_kcal;
-        if diff > 0.0 {
-            println!(
-                "  * 预算执行状态:          超标 +{:.0} kcal (今日摄入高于自适应预算)",
-                diff
-            );
-        } else {
-            println!("  * 预算执行状态:          剩余可用额度 {:.0} kcal", diff.abs());
+        match GoalProfileEngine::compute_adaptive_budget(&profile, &goal_config, &[]) {
+            Ok(budget_res) => {
+                println!("\n--- 5. 目标动态预算与摄入依从度 ---");
+                println!(
+                    "  * 设定体态目标:          {} (每周速率 {:+.2} kg/周)",
+                    goal_config.kind.display_name(),
+                    goal_config.weekly_rate_kg
+                );
+                println!("  * 今日动态摄入预算:      {:.0} kcal", budget_res.daily_budget_kcal);
+                let diff = balance.total_intake_kcal - budget_res.daily_budget_kcal;
+                if diff > 0.0 {
+                    println!(
+                        "  * 预算执行状态:          超标 +{:.0} kcal (今日摄入高于自适应预算)",
+                        diff
+                    );
+                } else {
+                    println!("  * 预算执行状态:          剩余可用额度 {:.0} kcal", diff.abs());
+                }
+            }
+            Err(e) => {
+                println!("\n--- 5. 目标动态预算 ---");
+                println!("  * 无法计算自适应预算: {}", e);
+            }
         }
     }
     println!();
@@ -1685,7 +1721,17 @@ fn handle_goal(args: &[String]) {
             // 获取过去 30 天体重历史记录
             let weight_points = storage.get_weight_history(user_id, 30).unwrap_or_default();
 
-            let result = GoalProfileEngine::compute_adaptive_budget(&profile, &goal_config, &weight_points);
+            let result = match GoalProfileEngine::compute_adaptive_budget(&profile, &goal_config, &weight_points)
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!(
+                        "错误: 无法计算自适应热量预算（{}）。当前仅支持 ≥19 岁且非孕非哺成人。",
+                        e
+                    );
+                    std::process::exit(1);
+                }
+            };
 
             println!("\n=========================================================================================");
             println!("  轻衡 (LiteBalance) 动态卡路里预算与自适应目标调节面板");

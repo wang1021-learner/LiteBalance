@@ -10,6 +10,7 @@
 
 use crate::energy::EnergyCalc;
 use crate::macro_engine::{DietProtocol, MacroEngine};
+use crate::nutrition_error::NutritionError;
 use crate::user::{Gender, HormoneProfile, UserProfile};
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
@@ -220,15 +221,17 @@ impl GoalProfileEngine {
     }
 
     /// 全流程闭环计算自适应每日热量预算与宏量营养素配比
+    ///
+    /// 未成年人或妊娠/哺乳档案会返回 [`NutritionError`]，避免误用成人非孕 EER。
     pub fn compute_adaptive_budget(
         user: &UserProfile,
         goal: &GoalConfig,
         recent_weight_history: &[(NaiveDate, f64)],
-    ) -> AdaptiveBudgetResult {
+    ) -> Result<AdaptiveBudgetResult, NutritionError> {
         let mut clinical_notes = Vec::new();
 
         // 1. 基准 TDEE 计算（遵循 NASEM 2023 DRI 方程）
-        let base_tdee_kcal = EnergyCalc::nasem_2023(user).round();
+        let base_tdee_kcal = EnergyCalc::nasem_2023(user)?.round();
 
         // 2. 原始速率热量调整
         let raw_rate_adjustment_kcal = match goal.kind {
@@ -335,7 +338,7 @@ impl GoalProfileEngine {
         // 7. 宏量素推荐分配（采用高蛋白均衡临床协议）
         let macro_plan = MacroEngine::calculate(daily_budget_kcal, user, None, DietProtocol::HighProteinBalanced);
 
-        AdaptiveBudgetResult {
+        Ok(AdaptiveBudgetResult {
             base_tdee_kcal,
             raw_rate_adjustment_kcal,
             taper_factor,
@@ -352,7 +355,7 @@ impl GoalProfileEngine {
             recommended_fat_g: macro_plan.fat_g,
             recommended_carbs_g: macro_plan.carbs_g,
             clinical_notes,
-        }
+        })
     }
 }
 
@@ -428,7 +431,7 @@ mod tests {
             manual_calorie_offset: 0.0,
         };
 
-        let result = GoalProfileEngine::compute_adaptive_budget(&female_user, &goal, &[]);
+        let result = GoalProfileEngine::compute_adaptive_budget(&female_user, &goal, &[]).unwrap();
         assert!(result.unconstrained_budget_kcal < 1200.0);
         assert_eq!(result.daily_budget_kcal, 1200.0);
         assert!(result.safety_floor_triggered);
@@ -455,7 +458,7 @@ mod tests {
             (d0 + chrono::Duration::days(14), 85.0),
         ];
 
-        let result = GoalProfileEngine::compute_adaptive_budget(&male_user, &goal, &history);
+        let result = GoalProfileEngine::compute_adaptive_budget(&male_user, &goal, &history).unwrap();
         assert_eq!(result.actual_ols_weekly_rate_kg, Some(0.0));
         // 目标 -0.5，实际 0.0，discrepancy = +0.5
         // raw_correction = -0.5 * 1100 * 0.5 = -275 -> clamped to -250
@@ -475,7 +478,7 @@ mod tests {
             manual_calorie_offset: 50.0,
         };
 
-        let result = GoalProfileEngine::compute_adaptive_budget(&male_user, &goal, &[]);
+        let result = GoalProfileEngine::compute_adaptive_budget(&male_user, &goal, &[]).unwrap();
         assert_eq!(result.raw_rate_adjustment_kcal, 275.0);
         assert_eq!(result.manual_offset_kcal, 50.0);
         assert!(result.daily_budget_kcal > result.base_tdee_kcal);

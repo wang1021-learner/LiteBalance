@@ -84,7 +84,7 @@ pub use analytics_reporting::{
 pub use custom_food::{CustomFoodDraft, CustomFoodEngine, InputBasis, NormalizedCustomFood};
 pub use day_boundary::{DayBoundaryConfig, DayBoundaryEngine};
 pub use dynamic_weight::{DynamicSimulationResult, DynamicWeightPlanner, TrajectoryDay};
-pub use energy::{EnergyCalc, EnergyComparison, EnergyStandard};
+pub use energy::{ADULT_ENERGY_MIN_AGE, EnergyCalc, EnergyComparison, EnergyStandard};
 pub use fasting::{CyclePhase, FastingProtocol, FastingSession, FastingState};
 pub use goal_profile::{AdaptiveBudgetResult, GoalConfig, GoalKind, GoalProfileEngine};
 pub use macro_engine::{CarbCyclingDayType, CarbCyclingSchedule, DietProtocol, MacroEngine, MacroTarget};
@@ -121,4 +121,4 @@ pub use remote_food_client::{
 
 // ---------- 领域模型 ----------
 pub use nutrition_error::NutritionError;
-pub use user::{ActivityLevel, Gender, HormoneProfile, UserProfile};
+pub use user::{ActivityLevel, Gender, HormoneProfile, ReproductiveStatus, UserProfile};

@@ -1,4 +1,5 @@
 use crate::energy::EnergyCalc;
+use crate::nutrition_error::NutritionError;
 use crate::user::{Gender, UserProfile};
 use serde::{Deserialize, Serialize};
 
@@ -110,7 +111,7 @@ impl DynamicWeightPlanner {
         daily_intake_kcal: f64,
         simulation_days: usize,
         target_weight_kg: Option<f64>,
-    ) -> DynamicSimulationResult {
+    ) -> Result<DynamicSimulationResult, NutritionError> {
         use constants::*;
 
         let initial_weight = profile.weight_kg;
@@ -120,8 +121,8 @@ impl DynamicWeightPlanner {
         let initial_fm = initial_weight * (bf_pct / 100.0);
         let initial_ffm = initial_weight - initial_fm;
 
-        // 稳态初始维持总代谢消耗（基于 NASEM 2023）
-        let ee_0 = EnergyCalc::nasem_2023(profile);
+        // 稳态初始维持总代谢消耗（基于 NASEM 2023；未成年人/孕哺会在此被拒绝）
+        let ee_0 = EnergyCalc::nasem_2023(profile)?;
         let delta_ei = daily_intake_kcal - ee_0;
 
         // 拆解静息代谢率 RMR 与活动产热 PAE 基础组分
@@ -206,7 +207,7 @@ impl DynamicWeightPlanner {
             });
         }
 
-        let final_day = timeline.last().unwrap();
+        let final_day = timeline.last().expect("timeline 至少包含第 0 天基线");
         let wishnofsky_final = initial_weight + (delta_ei * (simulation_days as f64)) / WISHNOFSKY_KCAL_PER_KG;
 
         // 理论稳态极限平台期：
@@ -220,7 +221,7 @@ impl DynamicWeightPlanner {
             (wishnofsky_final - final_day.weight_kg).max(0.0)
         };
 
-        DynamicSimulationResult {
+        Ok(DynamicSimulationResult {
             initial_weight_kg: initial_weight,
             target_weight_kg,
             daily_intake_kcal,
@@ -235,7 +236,7 @@ impl DynamicWeightPlanner {
             wishnofsky_final_weight_kg: (wishnofsky_final * 100.0).round() / 100.0,
             wishnofsky_overestimate_kg: (wishnofsky_overestimate * 100.0).round() / 100.0,
             timeline,
-        }
+        })
     }
 
     /// 反向目标求解器：使用二分根查找算法，计算在指定天数 `target_days` 内精准达到目标体重所需的每日摄入热量。
@@ -244,25 +245,25 @@ impl DynamicWeightPlanner {
     /// 数值收敛精度为 0.05kg（50克），而在真实生理中：
     /// 1. 人体自主饮食打卡通常存在 20%~40% 的低估漏记偏见；
     /// 2. 水钠潴留与肌糖原存储会造成每日 ±1~2kg 的自然生理波动；
-    /// 3. 本数值模型提供高置信度的科学基准线，用于指导个性化饮食规划。
+    /// 3. 本数值模型提供规划基准线，用于指导个性化饮食规划，而非个体临床承诺。
     pub fn solve_target_intake(
         profile: &UserProfile,
         initial_body_fat_pct: Option<f64>,
         target_weight_kg: f64,
         target_days: usize,
-    ) -> Result<f64, String> {
+    ) -> Result<f64, NutritionError> {
         if target_days == 0 {
-            return Err("目标天数必须大于 0".to_string());
+            return Err(NutritionError::CalculationError("目标天数必须大于 0".to_string()));
         }
 
-        let maintenance = EnergyCalc::nasem_2023(profile);
+        let maintenance = EnergyCalc::nasem_2023(profile)?;
         let mut low = 500.0;
         let mut high = (maintenance * 2.0).max(5000.0);
         let tolerance = 0.05; // 50 克收敛容差
 
         for _ in 0..50 {
             let mid = (low + high) / 2.0;
-            let sim = Self::simulate(profile, initial_body_fat_pct, mid, target_days, Some(target_weight_kg));
+            let sim = Self::simulate(profile, initial_body_fat_pct, mid, target_days, Some(target_weight_kg))?;
 
             let diff = sim.final_weight_kg - target_weight_kg;
 
@@ -295,7 +296,22 @@ impl DynamicWeightPlanner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::user::{ActivityLevel, Gender};
+    use crate::nutrition_error::NutritionError;
+    use crate::user::{ActivityLevel, Gender, ReproductiveStatus};
+
+    #[test]
+    fn test_hall_model_constants_match_published_anchors() {
+        // Kevin Hall / NIH 动态能量平衡常用生理学常数锚点（Lancet 2011 系模型常用取值）
+        assert!((constants::RHO_FM - 9400.0).abs() < 1e-9);
+        assert!((constants::RHO_FFM - 1800.0).abs() < 1e-9);
+        assert!((constants::FORBES_C - 10.4).abs() < 1e-9);
+        assert!((constants::GAMMA_FFM - 22.0).abs() < 1e-9);
+        assert!((constants::GAMMA_FM - 3.2).abs() < 1e-9);
+        assert!((constants::BETA_TEF - 0.10).abs() < 1e-9);
+        assert!((constants::XI_AT - 0.14).abs() < 1e-9);
+        assert!((constants::TAU_AT - 14.0).abs() < 1e-9);
+        assert!((constants::WISHNOFSKY_KCAL_PER_KG - 7700.0).abs() < 1e-9);
+    }
 
     #[test]
     fn test_dynamic_weight_loss_plateau() {
@@ -303,16 +319,33 @@ mod tests {
         let profile = UserProfile::new(30, 175.0, 90.0, Gender::Male, ActivityLevel::Inactive).unwrap();
 
         // 初始基线平衡消耗约 2800 kcal
-        let maintenance = EnergyCalc::nasem_2023(&profile);
+        let maintenance = EnergyCalc::nasem_2023(&profile).unwrap();
         // 施加每日 500 kcal 赤字
         let daily_intake = maintenance - 500.0;
 
-        let sim = DynamicWeightPlanner::simulate(&profile, Some(28.0), daily_intake, 365, Some(75.0));
+        let sim = DynamicWeightPlanner::simulate(&profile, Some(28.0), daily_intake, 365, Some(75.0)).unwrap();
 
         assert!(sim.final_weight_kg < 90.0);
         assert!(sim.metabolic_adaptation_kcal > 50.0);
         // 传统线性公式严重高估减重成果（因为忽视了基础代谢随体重下降而自发缩减）
         assert!(sim.wishnofsky_overestimate_kg > 2.0);
+    }
+
+    /// 黄金行为：Forbes 分配下减重应以脂肪丢失为主，且动态模型慢于 Wishnofsky 线性外推。
+    #[test]
+    fn test_forbes_fat_loss_dominates_and_slower_than_wishnofsky() {
+        let profile = UserProfile::new(35, 170.0, 95.0, Gender::Female, ActivityLevel::LowActive).unwrap();
+        let maintenance = EnergyCalc::nasem_2023(&profile).unwrap();
+        let intake = maintenance - 600.0;
+        let sim = DynamicWeightPlanner::simulate(&profile, Some(38.0), intake, 180, None).unwrap();
+
+        assert!(sim.fat_mass_change_kg < 0.0);
+        assert!(sim.fat_mass_change_kg.abs() > sim.fat_free_mass_change_kg.abs());
+        assert!(sim.final_weight_kg > sim.wishnofsky_final_weight_kg);
+        assert!(sim.metabolic_adaptation_kcal > 0.0);
+        // 平台体重应介于终点体重与极端线性外推之间（赤字场景）
+        assert!(sim.plateau_weight_kg < profile.weight_kg);
+        assert!(sim.plateau_weight_kg < sim.final_weight_kg + 5.0);
     }
 
     #[test]
@@ -326,7 +359,24 @@ mod tests {
         let intake = DynamicWeightPlanner::solve_target_intake(&profile, None, target_weight, days).unwrap();
 
         // 验证反解摄入量在正向模拟后能精准收敛至 78kg
-        let sim = DynamicWeightPlanner::simulate(&profile, None, intake, days, Some(target_weight));
+        let sim = DynamicWeightPlanner::simulate(&profile, None, intake, days, Some(target_weight)).unwrap();
         assert!((sim.final_weight_kg - target_weight).abs() < 0.1);
+    }
+
+    #[test]
+    fn test_simulate_rejects_unsupported_life_stages() {
+        let teen = UserProfile::new(15, 165.0, 55.0, Gender::Female, ActivityLevel::Active).unwrap();
+        assert!(matches!(
+            DynamicWeightPlanner::simulate(&teen, None, 1800.0, 30, None),
+            Err(NutritionError::UnsupportedAgeForEnergy { .. })
+        ));
+
+        let pregnant = UserProfile::new(29, 165.0, 70.0, Gender::Female, ActivityLevel::LowActive)
+            .unwrap()
+            .with_reproductive_status(ReproductiveStatus::Pregnant { trimester: 3 });
+        assert_eq!(
+            DynamicWeightPlanner::solve_target_intake(&pregnant, None, 65.0, 90).unwrap_err(),
+            NutritionError::UnsupportedReproductiveStatus("妊娠")
+        );
     }
 }

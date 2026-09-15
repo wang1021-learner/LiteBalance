@@ -23,37 +23,68 @@ pub enum Gender {
     NonBinary(HormoneProfile),
 }
 
-/// 身体活动水平等级（PAL，基于 NASEM 2023 与 IOM 标准定义）
+/// 身体活动水平等级（PAL，基于 NASEM 2023 成人分界定义）
+///
+/// 成人（≥19 岁）PAL 区间来源：NASEM 2023 *Dietary Reference Intakes for Energy*
+/// Highlights / Health Canada DRI 表：Inactive <1.53，Low active <1.68，Active <1.85，Very active <2.50。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActivityLevel {
-    /// 久坐 / 极少活动：1.00 <= PAL < 1.40（如典型的办公室案头工作，极少步行）
+    /// 久坐 / 极少活动：1.00 <= PAL < 1.53
     Inactive,
-    /// 低度活动：1.40 <= PAL < 1.60（如日常通勤走动，加上每天约 30~60 分钟轻松步行）
+    /// 低度活动：1.53 <= PAL < 1.68
     LowActive,
-    /// 积极活动：1.60 <= PAL < 1.90（如每天至少 60 分钟中高强度运动）
+    /// 积极活动：1.68 <= PAL < 1.85
     Active,
-    /// 极度活跃：1.90 <= PAL < 2.50（如重体力劳动者或每日高负荷耐力/竞技运动员）
+    /// 极度活跃：1.85 <= PAL < 2.50
     VeryActive,
 }
 
 impl ActivityLevel {
-    /// 返回该等级对应的代表性 PAL 系数数值（常用于老版 IOM 2005 模型对比）
+    /// 返回该等级对应的代表性 PAL 中点（便于展示；成人 EER 本身按分类回归，不乘此系数）
     pub fn representative_pal(&self) -> f64 {
         match self {
-            ActivityLevel::Inactive => 1.25,
-            ActivityLevel::LowActive => 1.50,
+            ActivityLevel::Inactive => 1.40,
+            ActivityLevel::LowActive => 1.60,
             ActivityLevel::Active => 1.75,
-            ActivityLevel::VeryActive => 2.20,
+            ActivityLevel::VeryActive => 2.05,
         }
     }
 
-    /// 返回标准 PAL 物理活动范围区间字符串
+    /// 返回 NASEM 2023 成人 PAL 物理活动范围区间字符串
     pub fn pal_range_str(&self) -> &'static str {
         match self {
-            ActivityLevel::Inactive => "1.00 <= PAL < 1.40",
-            ActivityLevel::LowActive => "1.40 <= PAL < 1.60",
-            ActivityLevel::Active => "1.60 <= PAL < 1.90",
-            ActivityLevel::VeryActive => "1.90 <= PAL < 2.50",
+            ActivityLevel::Inactive => "1.00 <= PAL < 1.53",
+            ActivityLevel::LowActive => "1.53 <= PAL < 1.68",
+            ActivityLevel::Active => "1.68 <= PAL < 1.85",
+            ActivityLevel::VeryActive => "1.85 <= PAL < 2.50",
+        }
+    }
+}
+
+/// 生殖/泌乳生命阶段（影响能量方程适用性）
+///
+/// 当前核心仅实现**非孕非哺成人** EER。妊娠与哺乳在 NASEM 2023 中有独立修正项，
+/// 在实现专用方程前必须显式拒绝，避免把非孕成人公式当成孕哺预算。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ReproductiveStatus {
+    /// 非妊娠、非哺乳（默认）
+    #[default]
+    None,
+    /// 妊娠（trimester：1/2/3，仅用于拒绝提示；专用 EER 尚未接入）
+    Pregnant {
+        trimester: u8,
+    },
+    /// 哺乳期
+    Lactating,
+}
+
+impl ReproductiveStatus {
+    /// 供错误提示使用的中文状态名
+    pub fn display_name(self) -> &'static str {
+        match self {
+            ReproductiveStatus::None => "非孕非哺",
+            ReproductiveStatus::Pregnant { .. } => "妊娠",
+            ReproductiveStatus::Lactating => "哺乳",
         }
     }
 }
@@ -71,10 +102,13 @@ pub struct UserProfile {
     pub gender: Gender,
     /// 身体日常活动等级
     pub activity_level: ActivityLevel,
+    /// 生殖/泌乳状态（默认非孕非哺；旧备份 JSON 缺省字段时按 None 反序列化）
+    #[serde(default)]
+    pub reproductive_status: ReproductiveStatus,
 }
 
 impl UserProfile {
-    /// 构造并校验用户档案
+    /// 构造并校验用户档案（默认非孕非哺）
     pub fn new(
         age: u8,
         height_cm: f64,
@@ -88,9 +122,16 @@ impl UserProfile {
             weight_kg,
             gender,
             activity_level,
+            reproductive_status: ReproductiveStatus::None,
         };
         profile.validate()?;
         Ok(profile)
+    }
+
+    /// 设置生殖/泌乳状态（用于显式声明妊娠或哺乳，从而触发能量方程拒绝）
+    pub fn with_reproductive_status(mut self, status: ReproductiveStatus) -> Self {
+        self.reproductive_status = status;
+        self
     }
 
     /// 校验各项生理指标是否在人类医学正常范围内
