@@ -1,0 +1,466 @@
+use crate::storage::db::StorageEngine;
+use crate::storage::models::{FoodRecord, FoodSource, Nutriments100g};
+use crate::storage::StorageError;
+
+/// 用于初始离线数据库填充的标准精选参考食品种子数据。
+struct SeedFood {
+    id: &'static str,
+    name: &'static str,
+    brand: Option<&'static str>,
+    serving_quantity: f64,
+    serving_unit: &'static str,
+    kcal: f64,
+    carbs: f64,
+    protein: f64,
+    fat: f64,
+    fiber: Option<f64>,
+    sodium_mg: Option<f64>,
+    potassium_mg: Option<f64>,
+    calcium_mg: Option<f64>,
+    iron_mg: Option<f64>,
+    vitamin_c_mg: Option<f64>,
+}
+
+const DEFAULT_FOODS: &[SeedFood] = &[
+    // --- 优质蛋白质类 ---
+    SeedFood {
+        id: "seed_chicken_breast",
+        name: "Chicken Breast 鸡胸肉 (Skinless, Boneless, Raw)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 100.0,
+        serving_unit: "g",
+        kcal: 120.0,
+        carbs: 0.0,
+        protein: 22.5,
+        fat: 2.6,
+        fiber: None,
+        sodium_mg: Some(65.0),
+        potassium_mg: Some(334.0),
+        calcium_mg: Some(11.0),
+        iron_mg: Some(0.7),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_salmon_wild",
+        name: "Wild Atlantic Salmon 大西洋野生三文鱼 (Raw)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 100.0,
+        serving_unit: "g",
+        kcal: 142.0,
+        carbs: 0.0,
+        protein: 19.8,
+        fat: 6.3,
+        fiber: None,
+        sodium_mg: Some(44.0),
+        potassium_mg: Some(490.0),
+        calcium_mg: Some(12.0),
+        iron_mg: Some(0.8),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_egg_whole",
+        name: "Whole Egg 全蛋/鸡蛋 (Large, Raw)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 50.0,
+        serving_unit: "g",
+        kcal: 143.0,
+        carbs: 0.7,
+        protein: 12.6,
+        fat: 9.5,
+        fiber: None,
+        sodium_mg: Some(142.0),
+        potassium_mg: Some(138.0),
+        calcium_mg: Some(56.0),
+        iron_mg: Some(1.8),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_egg_white",
+        name: "Egg White 纯蛋清 (Liquid / Raw)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 33.0,
+        serving_unit: "g",
+        kcal: 52.0,
+        carbs: 0.7,
+        protein: 10.9,
+        fat: 0.2,
+        fiber: None,
+        sodium_mg: Some(166.0),
+        potassium_mg: Some(163.0),
+        calcium_mg: Some(7.0),
+        iron_mg: Some(0.1),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_ground_beef_90_10",
+        name: "Ground Beef 90/10 瘦牛肉馅 (Raw)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 100.0,
+        serving_unit: "g",
+        kcal: 176.0,
+        carbs: 0.0,
+        protein: 20.0,
+        fat: 10.0,
+        fiber: None,
+        sodium_mg: Some(66.0),
+        potassium_mg: Some(335.0),
+        calcium_mg: Some(18.0),
+        iron_mg: Some(2.2),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_greek_yogurt_0pct",
+        name: "Greek Yogurt Plain 希腊酸奶 (Nonfat 0%)",
+        brand: Some("Chobani / Fage Style"),
+        serving_quantity: 170.0,
+        serving_unit: "g",
+        kcal: 59.0,
+        carbs: 3.6,
+        protein: 10.3,
+        fat: 0.4,
+        fiber: None,
+        sodium_mg: Some(36.0),
+        potassium_mg: Some(141.0),
+        calcium_mg: Some(110.0),
+        iron_mg: Some(0.1),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_whey_protein_isolate",
+        name: "Whey Protein Isolate 100% 分离乳清蛋白粉",
+        brand: Some("Sports Nutrition"),
+        serving_quantity: 30.0,
+        serving_unit: "g",
+        kcal: 370.0,
+        carbs: 3.3,
+        protein: 83.3,
+        fat: 1.7,
+        fiber: None,
+        sodium_mg: Some(160.0),
+        potassium_mg: Some(400.0),
+        calcium_mg: Some(450.0),
+        iron_mg: Some(0.5),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_tofu_firm",
+        name: "Firm Tofu 老豆腐/北豆腐 (Prepared with Calcium Sulfate)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 100.0,
+        serving_unit: "g",
+        kcal: 83.0,
+        carbs: 1.2,
+        protein: 10.0,
+        fat: 5.3,
+        fiber: Some(1.0),
+        sodium_mg: Some(12.0),
+        potassium_mg: Some(121.0),
+        calcium_mg: Some(282.0),
+        iron_mg: Some(2.0),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_canned_tuna",
+        name: "Canned Light Tuna 金枪鱼罐头 (in Water, Drained)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 85.0,
+        serving_unit: "g",
+        kcal: 116.0,
+        carbs: 0.0,
+        protein: 25.5,
+        fat: 0.8,
+        fiber: None,
+        sodium_mg: Some(338.0),
+        potassium_mg: Some(237.0),
+        calcium_mg: Some(11.0),
+        iron_mg: Some(1.5),
+        vitamin_c_mg: None,
+    },
+
+    // --- 碳水化合物主食类 ---
+    SeedFood {
+        id: "seed_rolled_oats",
+        name: "Rolled Whole Grain Oats 传统燕麦片 (Dry)",
+        brand: Some("Quaker Oats"),
+        serving_quantity: 40.0,
+        serving_unit: "g",
+        kcal: 379.0,
+        carbs: 67.7,
+        protein: 13.2,
+        fat: 6.5,
+        fiber: Some(10.1),
+        sodium_mg: Some(6.0),
+        potassium_mg: Some(362.0),
+        calcium_mg: Some(52.0),
+        iron_mg: Some(4.3),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_white_rice_jasmine",
+        name: "Jasmine White Rice 茉莉香白米 (Dry / Uncooked)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 50.0,
+        serving_unit: "g",
+        kcal: 365.0,
+        carbs: 80.0,
+        protein: 7.1,
+        fat: 0.7,
+        fiber: Some(1.3),
+        sodium_mg: Some(1.0),
+        potassium_mg: Some(115.0),
+        calcium_mg: Some(28.0),
+        iron_mg: Some(0.8),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_brown_rice",
+        name: "Brown Long-Grain Rice 糙米 (Dry / Uncooked)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 50.0,
+        serving_unit: "g",
+        kcal: 367.0,
+        carbs: 76.2,
+        protein: 7.5,
+        fat: 2.8,
+        fiber: Some(3.4),
+        sodium_mg: Some(7.0),
+        potassium_mg: Some(223.0),
+        calcium_mg: Some(23.0),
+        iron_mg: Some(1.5),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_sweet_potato",
+        name: "Sweet Potato 红薯/地瓜 (Raw, Unprepared)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 130.0,
+        serving_unit: "g",
+        kcal: 86.0,
+        carbs: 20.1,
+        protein: 1.6,
+        fat: 0.1,
+        fiber: Some(3.0),
+        sodium_mg: Some(55.0),
+        potassium_mg: Some(337.0),
+        calcium_mg: Some(30.0),
+        iron_mg: Some(0.6),
+        vitamin_c_mg: Some(2.4),
+    },
+    SeedFood {
+        id: "seed_banana",
+        name: "Banana 香蕉 (Fresh, Peeled)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 118.0,
+        serving_unit: "g",
+        kcal: 89.0,
+        carbs: 22.8,
+        protein: 1.1,
+        fat: 0.3,
+        fiber: Some(2.6),
+        sodium_mg: Some(1.0),
+        potassium_mg: Some(358.0),
+        calcium_mg: Some(5.0),
+        iron_mg: Some(0.3),
+        vitamin_c_mg: Some(8.7),
+    },
+    SeedFood {
+        id: "seed_apple",
+        name: "Apple 苹果 (Raw, with Skin)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 182.0,
+        serving_unit: "g",
+        kcal: 52.0,
+        carbs: 13.8,
+        protein: 0.3,
+        fat: 0.2,
+        fiber: Some(2.4),
+        sodium_mg: Some(1.0),
+        potassium_mg: Some(107.0),
+        calcium_mg: Some(6.0),
+        iron_mg: Some(0.1),
+        vitamin_c_mg: Some(4.6),
+    },
+    SeedFood {
+        id: "seed_blueberries",
+        name: "Blueberries 蓝莓 (Fresh)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 100.0,
+        serving_unit: "g",
+        kcal: 57.0,
+        carbs: 14.5,
+        protein: 0.7,
+        fat: 0.3,
+        fiber: Some(2.4),
+        sodium_mg: Some(1.0),
+        potassium_mg: Some(77.0),
+        calcium_mg: Some(6.0),
+        iron_mg: Some(0.3),
+        vitamin_c_mg: Some(9.7),
+    },
+
+    // --- 健康优质脂肪类 ---
+    SeedFood {
+        id: "seed_extra_virgin_olive_oil",
+        name: "Extra Virgin Olive Oil 特级初榨橄榄油",
+        brand: Some("USDA Reference"),
+        serving_quantity: 15.0,
+        serving_unit: "ml",
+        kcal: 884.0,
+        carbs: 0.0,
+        protein: 0.0,
+        fat: 100.0,
+        fiber: None,
+        sodium_mg: Some(2.0),
+        potassium_mg: Some(1.0),
+        calcium_mg: Some(1.0),
+        iron_mg: Some(0.6),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_avocado_hass",
+        name: "Hass Avocado 哈斯牛油果 (Raw)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 100.0,
+        serving_unit: "g",
+        kcal: 160.0,
+        carbs: 8.5,
+        protein: 2.0,
+        fat: 14.7,
+        fiber: Some(6.7),
+        sodium_mg: Some(7.0),
+        potassium_mg: Some(485.0),
+        calcium_mg: Some(12.0),
+        iron_mg: Some(0.6),
+        vitamin_c_mg: Some(10.0),
+    },
+    SeedFood {
+        id: "seed_almonds_raw",
+        name: "Almonds 巴旦木/扁桃仁 (Whole, Raw)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 28.0,
+        serving_unit: "g",
+        kcal: 579.0,
+        carbs: 21.6,
+        protein: 21.2,
+        fat: 49.9,
+        fiber: Some(12.5),
+        sodium_mg: Some(1.0),
+        potassium_mg: Some(733.0),
+        calcium_mg: Some(269.0),
+        iron_mg: Some(3.7),
+        vitamin_c_mg: None,
+    },
+    SeedFood {
+        id: "seed_peanut_butter_natural",
+        name: "Natural Peanut Butter 天然花生酱 (Peanuts and Salt)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 32.0,
+        serving_unit: "g",
+        kcal: 588.0,
+        carbs: 20.0,
+        protein: 25.0,
+        fat: 50.0,
+        fiber: Some(6.3),
+        sodium_mg: Some(426.0),
+        potassium_mg: Some(649.0),
+        calcium_mg: Some(43.0),
+        iron_mg: Some(1.9),
+        vitamin_c_mg: None,
+    },
+
+    // --- 新鲜蔬菜果蔬类 ---
+    SeedFood {
+        id: "seed_broccoli",
+        name: "Broccoli Florets 西兰花 (Raw)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 91.0,
+        serving_unit: "g",
+        kcal: 34.0,
+        carbs: 6.6,
+        protein: 2.8,
+        fat: 0.4,
+        fiber: Some(2.6),
+        sodium_mg: Some(33.0),
+        potassium_mg: Some(316.0),
+        calcium_mg: Some(47.0),
+        iron_mg: Some(0.7),
+        vitamin_c_mg: Some(89.2),
+    },
+    SeedFood {
+        id: "seed_spinach_raw",
+        name: "Baby Spinach 菠菜 (Raw)",
+        brand: Some("USDA Reference"),
+        serving_quantity: 30.0,
+        serving_unit: "g",
+        kcal: 23.0,
+        carbs: 3.6,
+        protein: 2.9,
+        fat: 0.4,
+        fiber: Some(2.2),
+        sodium_mg: Some(79.0),
+        potassium_mg: Some(558.0),
+        calcium_mg: Some(99.0),
+        iron_mg: Some(2.7),
+        vitamin_c_mg: Some(28.1),
+    },
+];
+
+/// 若本地数据库为空，则向 SQLite 数据库中预填充标准默认参考食品库。
+pub fn seed_default_foods_if_empty(storage: &StorageEngine) -> Result<usize, StorageError> {
+    let count = storage.search_foods_fts("chicken", 1)?.len();
+    if count > 0 {
+        return Ok(0); // 数据库已有食品，跳过预填充
+    }
+
+    let mut seeded = 0;
+    for f in DEFAULT_FOODS {
+        let record = FoodRecord {
+            id: f.id.to_string(),
+            name: f.name.to_string(),
+            brand: f.brand.map(|s| s.to_string()),
+            source: FoodSource::UsdaFoodDataCentral,
+            serving_quantity: Some(f.serving_quantity),
+            serving_unit: Some(f.serving_unit.to_string()),
+            image_url: None,
+        };
+
+        let mut nutriments = Nutriments100g::simple(f.kcal, f.carbs, f.protein, f.fat);
+        nutriments.fiber_100 = f.fiber;
+        nutriments.sodium_mg_100 = f.sodium_mg;
+        nutriments.potassium_mg_100 = f.potassium_mg;
+        nutriments.calcium_mg_100 = f.calcium_mg;
+        nutriments.iron_mg_100 = f.iron_mg;
+        nutriments.vitamin_c_mg_100 = f.vitamin_c_mg;
+
+        storage.insert_food(&record, &nutriments)?;
+        seeded += 1;
+    }
+
+    Ok(seeded)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_seed_foods_and_fts() {
+        let storage = StorageEngine::open_in_memory().unwrap();
+        let seeded = seed_default_foods_if_empty(&storage).unwrap();
+        assert_eq!(seeded, DEFAULT_FOODS.len());
+
+        // 第二次执行应当为幂等无操作 (no-op)
+        let seeded_again = seed_default_foods_if_empty(&storage).unwrap();
+        assert_eq!(seeded_again, 0);
+
+        // 搜索三文鱼
+        let results = storage.search_foods_fts("salmon", 5).unwrap();
+        assert!(!results.is_empty());
+        assert_eq!(results[0].id, "seed_salmon_wild");
+
+        // 搜索燕麦
+        let results_oats = storage.search_foods_fts("oat", 5).unwrap();
+        assert!(!results_oats.is_empty());
+        assert_eq!(results_oats[0].id, "seed_rolled_oats");
+    }
+}
