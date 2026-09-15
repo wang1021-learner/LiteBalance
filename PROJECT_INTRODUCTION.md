@@ -34,7 +34,7 @@ graph TD
         UniFFI --> Core[轻衡 LiteBalance 统一核心引擎 (Rust 2024)]
     end
 
-    subgraph Calc_Layer [临床级代谢与营养计算层 (src/calc)]
+    subgraph Calc_Layer [临床级代谢与营养计算层 (扁平模块)]
         Core --> Energy[NASEM 2023 能量代谢矩阵]
         Core --> ODE[NIH Kevin Hall 动态体重常微分方程]
         Core --> Pontzer[Pontzer-Trexler 2026 运动代偿模型]
@@ -50,7 +50,7 @@ graph TD
         Core --> Report[周期性代谢偏离度报表]
     end
 
-    subgraph Storage_Layer [物理双分库存储层 (src/storage)]
+    subgraph Storage_Layer [物理双分库存储层 (扁平模块)]
         Core --> MainDB[(主库: litebalance.db<br/>用户沙盒目录)]
         MainDB --> Tables[用户档案/打卡/体重/自建库/目标]
         MainDB --> FTS5[FTS5 离线全文索引]
@@ -58,7 +58,7 @@ graph TD
         CacheDB --> OFFCache[OpenFoodFacts 30天TTL缓存]
     end
 
-    subgraph Client_Layer [外部网络服务与客户端 (src/client)]
+    subgraph Client_Layer [外部网络服务与客户端 (扁平模块)]
         Core --> Barcode[GS1 模10条码校验与自动升格]
         Barcode --> OFFClient[OpenFoodFacts 客户端]
         OFFClient --> RateLimit[滑动窗口限速器 (14次/分)]
@@ -95,17 +95,17 @@ graph TD
 
 | 模块名称 | 核心文件 | 移动端产品核心价值 |
 | :--- | :--- | :--- |
-| **能量代谢引擎** | [`energy.rs`](file:///D:/nutritracker-core/src/calc/energy.rs) | 基于 NASEM 2023 最新 DRI 标准，结合成人 8 分组多项式方程，准确预测每日静息维持能耗（TDEE）。 |
-| **动态体重 ODE** | [`dynamic_weight.rs`](file:///D:/nutritracker-core/src/calc/dynamic_weight.rs) | 美国国家卫生研究院（NIH）Kevin Hall 常微分方程模型，精准模拟人体减重平台期与瘦体重演化。 |
-| **运动能量代偿** | [`workout_compensation.rs`](file:///D:/nutritracker-core/src/calc/workout_compensation.rs) | Pontzer-Trexler 2026 前沿模型，区分名义毛消耗与真实净消耗，扣除代偿挤压，防止高估消耗诱发暴食反弹。 |
-| **运动活动闭环** | [`activity.rs`](file:///D:/nutritracker-core/src/calc/activity.rs) | 涵盖 Herrmann 2024 MET 标准运动库，打通每日“摄入 - 基础能耗 - 运动 - 代偿 = 真实净能量差”闭环天平。 |
-| **自适应目标调节** | [`goal_profile.rs`](file:///D:/nutritracker-core/src/calc/goal_profile.rs) | 临床自适应动态预算（-0.25~-1.0 kg/周），结合实测体重 OLS 回归斜率自动调节，平稳着陆缓冲，守护内分泌红线（男 $\ge 1500$ / 女 $\ge 1200$ kcal）。 |
-| **跨午夜生理日界线** | [`day_boundary.rs`](file:///D:/nutritracker-core/src/calc/day_boundary.rs) | 支持自定义日界线（如凌晨 04:00），将通宵夜班或熬夜宵夜按生理清醒周期归集至前一逻辑日，彻底根除日历漂移。 |
-| **本地自建食物全流程** | [`custom_food.rs`](file:///D:/nutritracker-core/src/calc/custom_food.rs) | 支持包装单份（Serving）或每 100g 模式录入，自动等比精确归一化，零污染保留未检微量，自动同步 FTS5 离线检索。 |
-| **多单位制转换系统** | [`unit_system.rs`](file:///D:/nutritracker-core/src/calc/unit_system.rs) | 公制（Metric）、英制（Imperial / US）、英石复合进位（UK Stone + lb）、身高（ft + in）、大卡/千焦、盎司/毫升双向高精度换算。 |
-| **微量元素达标雷达** | [`micronutrient_eval.rs`](file:///D:/nutritracker-core/src/calc/micronutrient_eval.rs) | 对标 NASEM DRI（RDA / AI / UL / CDRR），内置 50% 覆盖率防误报门限，精准诊断钠过量及矿物质达成度。 |
-| **周期性报表分析** | [`analytics_reporting.rs`](file:///D:/nutritracker-core/src/calc/analytics_reporting.rs) | 周期性代谢偏离度诊断、实际热量缺口达成率统计、三大宏量摄入饼图及断食依从率分析。 |
-| **外部食品库与条形码** | [`remote_food_client.rs`](file:///D:/nutritracker-core/src/client/remote_food_client.rs) | GS1 模 10 条形码校验（EAN-13/UPC-A）、OpenFoodFacts API 客户端，合规 User-Agent 与滑动窗口防封限速。 |
+| **能量代谢引擎** | [`energy.rs`](src/energy.rs) | 基于 NASEM 2023 最新 DRI 标准，结合成人 8 分组多项式方程，准确预测每日静息维持能耗（TDEE）。 |
+| **动态体重 ODE** | [`dynamic_weight.rs`](src/dynamic_weight.rs) | 美国国家卫生研究院（NIH）Kevin Hall 常微分方程模型，精准模拟人体减重平台期与瘦体重演化。 |
+| **运动能量代偿** | [`workout_compensation.rs`](src/workout_compensation.rs) | Pontzer-Trexler 2026 前沿模型，区分名义毛消耗与真实净消耗，扣除代偿挤压，防止高估消耗诱发暴食反弹。 |
+| **运动活动闭环** | [`activity.rs`](src/activity.rs) | 涵盖 Herrmann 2024 MET 标准运动库，打通每日“摄入 - 基础能耗 - 运动 - 代偿 = 真实净能量差”闭环天平。 |
+| **自适应目标调节** | [`goal_profile.rs`](src/goal_profile.rs) | 临床自适应动态预算（-0.25~-1.0 kg/周），结合实测体重 OLS 回归斜率自动调节，平稳着陆缓冲，守护内分泌红线（男 $\ge 1500$ / 女 $\ge 1200$ kcal）。 |
+| **跨午夜生理日界线** | [`day_boundary.rs`](src/day_boundary.rs) | 支持自定义日界线（如凌晨 04:00），将通宵夜班或熬夜宵夜按生理清醒周期归集至前一逻辑日，彻底根除日历漂移。 |
+| **本地自建食物全流程** | [`custom_food.rs`](src/custom_food.rs) | 支持包装单份（Serving）或每 100g 模式录入，自动等比精确归一化，零污染保留未检微量，自动同步 FTS5 离线检索。 |
+| **多单位制转换系统** | [`unit_system.rs`](src/unit_system.rs) | 公制（Metric）、英制（Imperial / US）、英石复合进位（UK Stone + lb）、身高（ft + in）、大卡/千焦、盎司/毫升双向高精度换算。 |
+| **微量元素达标雷达** | [`micronutrient_eval.rs`](src/micronutrient_eval.rs) | 对标 NASEM DRI（RDA / AI / UL / CDRR），内置 50% 覆盖率防误报门限，精准诊断钠过量及矿物质达成度。 |
+| **周期性报表分析** | [`analytics_reporting.rs`](src/analytics_reporting.rs) | 周期性代谢偏离度诊断、实际热量缺口达成率统计、三大宏量摄入饼图及断食依从率分析。 |
+| **外部食品库与条形码** | [`remote_food_client.rs`](src/remote_food_client.rs) | GS1 模 10 条形码校验（EAN-13/UPC-A）、OpenFoodFacts API 客户端，合规 User-Agent 与滑动窗口防封限速。 |
 
 ---
 

@@ -9,7 +9,7 @@
 //! 3. 实体生成与本地库绑定：
 //!    构造标准的 `FoodRecord` 与 `Nutriments100g`，便于持久化至 SQLite `foods` 与 FTS5 全文索引。
 
-use crate::storage::models::{FoodRecord, FoodSource, Nutriments100g};
+use crate::records::{FoodRecord, FoodSource, Nutriments100g};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

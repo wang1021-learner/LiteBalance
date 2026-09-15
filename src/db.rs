@@ -4,12 +4,12 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
-use super::error::StorageError;
-use super::models::{
+use crate::records::{
     ActivityLogRecord, DailySummary, FastingSessionRecord, FoodRecord, FoodSource, FoodWithNutriments, IntakeLogRecord,
     MealType, Nutriments100g, UserGoalRecord, UserProfileRecord, WaterLogRecord, WeightLogRecord,
 };
-use super::schema::CREATE_SCHEMA_SQL;
+use crate::schema::CREATE_SCHEMA_SQL;
+use crate::storage_error::StorageError;
 
 /// 线程安全的本地 SQLite 数据库操作引擎。
 #[derive(Clone)]
@@ -66,27 +66,27 @@ impl StorageEngine {
         id: &str,
         name: &str,
         birthday: &str,
-        profile: &crate::models::UserProfile,
+        profile: &crate::user::UserProfile,
     ) -> Result<(), StorageError> {
         let conn = self.conn()?;
         let (gender_str, hormone_str) = match profile.gender {
-            crate::models::Gender::Male => ("male", None),
-            crate::models::Gender::Female => ("female", None),
-            crate::models::Gender::NonBinary(h) => {
+            crate::user::Gender::Male => ("male", None),
+            crate::user::Gender::Female => ("female", None),
+            crate::user::Gender::NonBinary(h) => {
                 let h_str = match h {
-                    crate::models::HormoneProfile::Averaged => "averaged",
-                    crate::models::HormoneProfile::EstrogenTypical => "estrogen_typical",
-                    crate::models::HormoneProfile::TestosteroneTypical => "testosterone_typical",
+                    crate::user::HormoneProfile::Averaged => "averaged",
+                    crate::user::HormoneProfile::EstrogenTypical => "estrogen_typical",
+                    crate::user::HormoneProfile::TestosteroneTypical => "testosterone_typical",
                 };
                 ("non_binary", Some(h_str))
             }
         };
 
         let activity_str = match profile.activity_level {
-            crate::models::ActivityLevel::Inactive => "inactive",
-            crate::models::ActivityLevel::LowActive => "low_active",
-            crate::models::ActivityLevel::Active => "active",
-            crate::models::ActivityLevel::VeryActive => "very_active",
+            crate::user::ActivityLevel::Inactive => "inactive",
+            crate::user::ActivityLevel::LowActive => "low_active",
+            crate::user::ActivityLevel::Active => "active",
+            crate::user::ActivityLevel::VeryActive => "very_active",
         };
 
         conn.execute(
@@ -602,7 +602,7 @@ impl StorageEngine {
             .map_err(|e| StorageError::Conversion(format!("无效的逻辑日期格式 (YYYY-MM-DD): {}", e)))?;
 
         let (start_iso, end_iso) =
-            crate::calc::DayBoundaryEngine::get_logical_day_sql_range(date, boundary_offset_minutes);
+            crate::day_boundary::DayBoundaryEngine::get_logical_day_sql_range(date, boundary_offset_minutes);
 
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
@@ -685,7 +685,7 @@ impl StorageEngine {
         user_id: &str,
         date_prefix: &str, // 例如 "2026-09-14"
         goal_ml: u32,
-    ) -> Result<crate::calc::water::DailyWaterSummary, StorageError> {
+    ) -> Result<crate::water::DailyWaterSummary, StorageError> {
         let conn = self.conn()?;
         let pattern = format!("{}%", date_prefix);
 
@@ -698,7 +698,7 @@ impl StorageEngine {
         )?;
 
         let total_ml: i64 = stmt.query_row(params![user_id, pattern], |row| row.get(0))?;
-        Ok(crate::calc::water::DailyWaterSummary::new(
+        Ok(crate::water::DailyWaterSummary::new(
             date_prefix,
             total_ml as u32,
             goal_ml,
@@ -799,9 +799,9 @@ impl StorageEngine {
         description: Option<&str>,
         servings: f64,
         total_weight_override: Option<f64>,
-        ingredients: &[crate::calc::recipe::RecipeIngredientInput],
-    ) -> Result<crate::storage::models::RecipeWithDetails, StorageError> {
-        let comp = crate::calc::recipe::compute_recipe_nutrition(ingredients, servings, total_weight_override)
+        ingredients: &[crate::recipe::RecipeIngredientInput],
+    ) -> Result<crate::records::RecipeWithDetails, StorageError> {
+        let comp = crate::recipe::compute_recipe_nutrition(ingredients, servings, total_weight_override)
             .map_err(StorageError::Conversion)?;
 
         let actual_recipe_id = recipe_id
@@ -855,7 +855,7 @@ impl StorageEngine {
                 params![ing_id, actual_recipe_id, ing.food_id, ing.amount, ing.unit, converted_g],
             )?;
 
-            ingredient_records.push(crate::storage::models::RecipeIngredientRecord {
+            ingredient_records.push(crate::records::RecipeIngredientRecord {
                 id: ing_id,
                 recipe_id: actual_recipe_id.clone(),
                 food_id: ing.food_id.clone(),
@@ -929,8 +929,8 @@ impl StorageEngine {
 
         tx.commit()?;
 
-        Ok(crate::storage::models::RecipeWithDetails {
-            recipe: crate::storage::models::RecipeRecord {
+        Ok(crate::records::RecipeWithDetails {
+            recipe: crate::records::RecipeRecord {
                 id: actual_recipe_id,
                 user_id: user_id.to_string(),
                 name: name.to_string(),
@@ -946,10 +946,7 @@ impl StorageEngine {
     }
 
     /// 查询食谱详情（包含所有原料明细及其计算所得的每100g和每份营养素）。
-    pub fn get_recipe(
-        &self,
-        recipe_id: &str,
-    ) -> Result<Option<crate::storage::models::RecipeWithDetails>, StorageError> {
+    pub fn get_recipe(&self, recipe_id: &str) -> Result<Option<crate::records::RecipeWithDetails>, StorageError> {
         let conn = self.conn()?;
 
         // 1. 获取食谱基本信息
@@ -963,7 +960,7 @@ impl StorageEngine {
 
         let mut rows = stmt.query(params![recipe_id])?;
         let recipe = if let Some(row) = rows.next()? {
-            crate::storage::models::RecipeRecord {
+            crate::records::RecipeRecord {
                 id: row.get(0)?,
                 user_id: row.get(1)?,
                 name: row.get(2)?,
@@ -987,7 +984,7 @@ impl StorageEngine {
         )?;
 
         let ing_rows = ing_stmt.query_map(params![recipe_id], |row| {
-            Ok(crate::storage::models::RecipeIngredientRecord {
+            Ok(crate::records::RecipeIngredientRecord {
                 id: row.get(0)?,
                 recipe_id: row.get(1)?,
                 food_id: row.get(2)?,
@@ -1020,7 +1017,7 @@ impl StorageEngine {
 
         let mut nutr_rows = nutr_stmt.query(params![recipe_id])?;
         let per_100g = if let Some(row) = nutr_rows.next()? {
-            crate::storage::models::Nutriments100g {
+            crate::records::Nutriments100g {
                 energy_kcal_100: row.get(0)?,
                 carbohydrates_100: row.get(1)?,
                 proteins_100: row.get(2)?,
@@ -1047,12 +1044,12 @@ impl StorageEngine {
                 niacin_mg_100: row.get(23)?,
             }
         } else {
-            crate::storage::models::Nutriments100g::simple(0.0, 0.0, 0.0, 0.0)
+            crate::records::Nutriments100g::simple(0.0, 0.0, 0.0, 0.0)
         };
 
         let serving_ratio = recipe.total_weight_g / recipe.servings / 100.0;
 
-        let per_serving = crate::storage::models::Nutriments100g {
+        let per_serving = crate::records::Nutriments100g {
             energy_kcal_100: ((per_100g.energy_kcal_100 * serving_ratio) * 100.0).round() / 100.0,
             carbohydrates_100: ((per_100g.carbohydrates_100 * serving_ratio) * 100.0).round() / 100.0,
             proteins_100: ((per_100g.proteins_100 * serving_ratio) * 100.0).round() / 100.0,
@@ -1119,7 +1116,7 @@ impl StorageEngine {
                 .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
         };
 
-        Ok(Some(crate::storage::models::RecipeWithDetails {
+        Ok(Some(crate::records::RecipeWithDetails {
             recipe,
             ingredients,
             per_100g,
@@ -1128,7 +1125,7 @@ impl StorageEngine {
     }
 
     /// 列出指定用户创建的所有自建食谱基础信息。
-    pub fn list_user_recipes(&self, user_id: &str) -> Result<Vec<crate::storage::models::RecipeRecord>, StorageError> {
+    pub fn list_user_recipes(&self, user_id: &str) -> Result<Vec<crate::records::RecipeRecord>, StorageError> {
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
@@ -1140,7 +1137,7 @@ impl StorageEngine {
         )?;
 
         let rows = stmt.query_map(params![user_id], |row| {
-            Ok(crate::storage::models::RecipeRecord {
+            Ok(crate::records::RecipeRecord {
                 id: row.get(0)?,
                 user_id: row.get(1)?,
                 name: row.get(2)?,
@@ -1162,7 +1159,7 @@ impl StorageEngine {
     pub fn list_all_recipes_with_details(
         &self,
         user_id: &str,
-    ) -> Result<Vec<crate::storage::models::RecipeWithDetails>, StorageError> {
+    ) -> Result<Vec<crate::records::RecipeWithDetails>, StorageError> {
         let headers = self.list_user_recipes(user_id)?;
         let mut list = Vec::new();
         for r in headers {
@@ -2137,12 +2134,12 @@ mod tests {
         let storage = StorageEngine::open_in_memory().unwrap();
 
         // 1. 插入用户
-        let user_profile = crate::models::UserProfile::new(
+        let user_profile = crate::user::UserProfile::new(
             28,
             175.0,
             75.0,
-            crate::models::Gender::Male,
-            crate::models::ActivityLevel::Active,
+            crate::user::Gender::Male,
+            crate::user::ActivityLevel::Active,
         )
         .unwrap();
         storage
@@ -2190,12 +2187,12 @@ mod tests {
     #[test]
     fn test_storage_water_tracking() {
         let storage = StorageEngine::open_in_memory().unwrap();
-        let user = crate::models::UserProfile::new(
+        let user = crate::user::UserProfile::new(
             30,
             180.0,
             80.0,
-            crate::models::Gender::Male,
-            crate::models::ActivityLevel::Active,
+            crate::user::Gender::Male,
+            crate::user::ActivityLevel::Active,
         )
         .unwrap();
         storage.insert_user("user_water", "Bob", "1994-01-01", &user).unwrap();
@@ -2214,12 +2211,12 @@ mod tests {
     #[test]
     fn test_storage_fasting_lifecycle() {
         let storage = StorageEngine::open_in_memory().unwrap();
-        let user = crate::models::UserProfile::new(
+        let user = crate::user::UserProfile::new(
             25,
             165.0,
             55.0,
-            crate::models::Gender::Female,
-            crate::models::ActivityLevel::Inactive,
+            crate::user::Gender::Female,
+            crate::user::ActivityLevel::Inactive,
         )
         .unwrap();
         storage
@@ -2254,12 +2251,12 @@ mod tests {
     #[test]
     fn test_storage_recipe_management() {
         let storage = StorageEngine::open_in_memory().unwrap();
-        let user = crate::models::UserProfile::new(
+        let user = crate::user::UserProfile::new(
             27,
             172.0,
             68.0,
-            crate::models::Gender::Female,
-            crate::models::ActivityLevel::Active,
+            crate::user::Gender::Female,
+            crate::user::ActivityLevel::Active,
         )
         .unwrap();
         storage.insert_user("user_chef", "Diana", "1997-08-15", &user).unwrap();
@@ -2293,14 +2290,14 @@ mod tests {
 
         // 2. 保存食谱：100g 燕麦片 + 200ml 牛奶，分 2 份
         let ingredients = vec![
-            crate::calc::recipe::RecipeIngredientInput::simple(
+            crate::recipe::RecipeIngredientInput::simple(
                 "food_oats_test",
                 "测试燕麦片",
                 100.0,
                 "g",
                 Nutriments100g::simple(380.0, 66.0, 13.0, 7.0),
             ),
-            crate::calc::recipe::RecipeIngredientInput::simple(
+            crate::recipe::RecipeIngredientInput::simple(
                 "food_milk_test",
                 "全脂鲜牛奶",
                 200.0,
@@ -2350,12 +2347,12 @@ mod tests {
     #[test]
     fn test_storage_weight_and_intakes_trends() {
         let storage = StorageEngine::open_in_memory().unwrap();
-        let user = crate::models::UserProfile::new(
+        let user = crate::user::UserProfile::new(
             32,
             178.0,
             82.0,
-            crate::models::Gender::Male,
-            crate::models::ActivityLevel::LowActive,
+            crate::user::Gender::Male,
+            crate::user::ActivityLevel::LowActive,
         )
         .unwrap();
         storage.insert_user("user_trends", "Eric", "1992-11-04", &user).unwrap();
@@ -2377,7 +2374,7 @@ mod tests {
         assert_eq!(weight_history[2].1, 80.9);
 
         // 使用 calc::trends 计算体重预测
-        let proj = crate::calc::trends::weight_projection(&weight_history, Some(75.0)).unwrap();
+        let proj = crate::trends::weight_projection(&weight_history, Some(75.0)).unwrap();
         assert!(proj.rate_per_week_kg < 0.0);
         assert!(proj.weeks_to_target.is_some());
     }
@@ -2507,12 +2504,12 @@ mod tests {
         let storage = StorageEngine::open_in_memory().unwrap();
         let user_id = "test_night_owl";
 
-        let user = crate::models::UserProfile::new(
+        let user = crate::user::UserProfile::new(
             26,
             175.0,
             70.0,
-            crate::models::Gender::Male,
-            crate::models::ActivityLevel::Active,
+            crate::user::Gender::Male,
+            crate::user::ActivityLevel::Active,
         )
         .unwrap();
         storage.insert_user(user_id, "熬夜测试员", "1998-05-10", &user).unwrap();
@@ -2592,11 +2589,11 @@ mod tests {
     fn test_storage_custom_food_lifecycle() {
         let storage = StorageEngine::open_in_memory().unwrap();
 
-        let draft = crate::calc::CustomFoodDraft {
+        let draft = crate::custom_food::CustomFoodDraft {
             name: "自制减脂鹰嘴豆泥".to_string(),
             brand: Some("家庭厨房".to_string()),
             barcode: None,
-            basis: Some(crate::calc::InputBasis::PerServing {
+            basis: Some(crate::custom_food::InputBasis::PerServing {
                 serving_amount: 50.0,
                 unit: "g".to_string(),
             }),
@@ -2609,7 +2606,7 @@ mod tests {
             ..Default::default()
         };
 
-        let norm = crate::calc::CustomFoodEngine::normalize_draft(&draft).unwrap();
+        let norm = crate::custom_food::CustomFoodEngine::normalize_draft(&draft).unwrap();
         storage.insert_food(&norm.food, &norm.nutriments_100g).unwrap();
 
         // 1. 验证自建食物列表包含该项
@@ -2636,12 +2633,12 @@ mod tests {
         let user_id = "user_crud_test";
 
         // 1. 创建用户并验证 list_all_users
-        let profile = crate::models::UserProfile::new(
+        let profile = crate::user::UserProfile::new(
             25,
             175.0,
             70.0,
-            crate::models::Gender::Male,
-            crate::models::ActivityLevel::Active,
+            crate::user::Gender::Male,
+            crate::user::ActivityLevel::Active,
         )
         .unwrap();
         storage

@@ -1,4 +1,4 @@
-use crate::models::{Gender, HormoneProfile, UserProfile};
+use crate::user::{Gender, HormoneProfile, UserProfile};
 use serde::{Deserialize, Serialize};
 
 /// 体育运动/体能训练类型（运动模态）。
@@ -269,7 +269,7 @@ impl WorkoutCompensationCalc {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::ActivityLevel;
+    use crate::user::ActivityLevel;
 
     #[test]
     fn test_pontzer_trexler_2026_resistance_vs_aerobic() {

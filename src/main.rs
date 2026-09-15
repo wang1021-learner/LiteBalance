@@ -13,18 +13,15 @@
 use std::env;
 use std::path::PathBuf;
 
-use litebalance_core::calc::{
-    ActivityEnergyCalculator, CustomFoodDraft, CustomFoodEngine, DailyEnergyBalance, DailyIntakeData, DailyWeightData,
-    DayBoundaryConfig, DietProtocol, DriStatus, DynamicWeightPlanner, EnergyCalc, ExerciseModality, FastingProtocol,
-    FastingSession, FastingState, GoalConfig, GoalKind, GoalProfileEngine, InputBasis, MacroEngine,
-    MicronutrientEvaluator, NutritionMovingAverage, NutritionState, PeriodicAnalyticsEngine, UnitConverter, WaterCalc,
-    find_activity_by_code, get_standard_activity_catalog, weight_projection,
-};
-use litebalance_core::client::{BarcodeValidator, RemoteFoodClient};
-use litebalance_core::models::{ActivityLevel, Gender, UserProfile};
-use litebalance_core::storage::{
-    ActivityLogRecord, CacheStorageEngine, ExportImportEngine, FoodRecord, FoodSource, MealType, NutriTrackerBackup,
-    StorageEngine, UserGoalRecord, seed_default_foods_if_empty,
+// 扁平模块结构下，一律从 crate 根引入公开 API，无需关心类型落在哪个模块文件中。
+use litebalance_core::{
+    ActivityEnergyCalculator, ActivityLevel, ActivityLogRecord, BarcodeValidator, CacheStorageEngine, CustomFoodDraft,
+    CustomFoodEngine, DailyEnergyBalance, DailyIntakeData, DailyWeightData, DayBoundaryConfig, DietProtocol, DriStatus,
+    DynamicWeightPlanner, EnergyCalc, ExerciseModality, ExportImportEngine, FastingProtocol, FastingSession,
+    FastingState, FoodRecord, FoodSource, Gender, GoalConfig, GoalKind, GoalProfileEngine, InputBasis, MacroEngine,
+    MealType, MicronutrientEvaluator, NutriTrackerBackup, NutritionMovingAverage, NutritionState,
+    PeriodicAnalyticsEngine, RemoteFoodClient, StorageEngine, UnitConverter, UserGoalRecord, UserProfile, WaterCalc,
+    find_activity_by_code, get_standard_activity_catalog, seed_default_foods_if_empty, weight_projection,
 };
 
 /// 获取轻衡本地数据目录（用户主目录下的 `.litebalance/`），并确保目录已创建。
@@ -813,8 +810,8 @@ fn handle_dri(args: &[String]) {
             DriStatus::Excessive { upper_limit, .. } => format!("超标过量 (> {})", upper_limit),
         };
         let std_str = match a.standard {
-            litebalance_core::calc::DriStandard::Rda => "RDA",
-            litebalance_core::calc::DriStandard::Ai => "AI",
+            litebalance_core::DriStandard::Rda => "RDA",
+            litebalance_core::DriStandard::Ai => "AI",
         };
         println!(
             "{:<24} {:<10.1} {:<12.1} {:<10} {:<12.0}% {:<16}",

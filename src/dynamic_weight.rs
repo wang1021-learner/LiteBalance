@@ -1,5 +1,5 @@
-use crate::calc::energy::EnergyCalc;
-use crate::models::{Gender, UserProfile};
+use crate::energy::EnergyCalc;
+use crate::user::{Gender, UserProfile};
 use serde::{Deserialize, Serialize};
 
 /// 美国国立卫生研究院（NIH）Kevin Hall 动态能量平衡模型（Lancet 2011）生理学常数
@@ -295,7 +295,7 @@ impl DynamicWeightPlanner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ActivityLevel, Gender};
+    use crate::user::{ActivityLevel, Gender};
 
     #[test]
     fn test_dynamic_weight_loss_plateau() {

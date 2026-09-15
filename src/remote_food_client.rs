@@ -20,9 +20,9 @@ use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::client::barcode::{BarcodeError, BarcodeValidator, NormalizedBarcode};
-use crate::storage::cache_db::{CacheStorageEngine, CachedFoodRecord};
-use crate::storage::models::Nutriments100g;
+use crate::barcode::{BarcodeError, BarcodeValidator, NormalizedBarcode};
+use crate::cache_db::{CacheStorageEngine, CachedFoodRecord};
+use crate::records::Nutriments100g;
 
 /// 官方合规默认 User-Agent（格式：应用名/版本 (联系方式或仓库主页)）
 pub const DEFAULT_USER_AGENT: &str =
@@ -56,7 +56,7 @@ pub enum RemoteClientError {
 
     /// 本地存储/缓存异常
     #[error("本地缓存数据库异常: {0}")]
-    Storage(#[from] crate::storage::error::StorageError),
+    Storage(#[from] crate::storage_error::StorageError),
 }
 
 /// 客户端本地滑动窗口请求限速器

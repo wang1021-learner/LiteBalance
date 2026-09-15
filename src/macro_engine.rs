@@ -1,4 +1,4 @@
-use crate::models::UserProfile;
+use crate::user::UserProfile;
 use serde::{Deserialize, Serialize};
 
 /// 饮食流派哲学 / 三大宏量营养素分配方案。
@@ -119,7 +119,7 @@ impl MacroEngine {
     ) -> MacroTarget {
         let bw = user.weight_kg;
         let bf = body_fat_pct.unwrap_or_else(|| {
-            crate::calc::dynamic_weight::DynamicWeightPlanner::estimate_body_fat_pct(user.bmi(), user.age, user.gender)
+            crate::dynamic_weight::DynamicWeightPlanner::estimate_body_fat_pct(user.bmi(), user.age, user.gender)
         });
         let ffm = bw * (1.0 - (bf / 100.0)).max(0.1);
 
@@ -329,7 +329,7 @@ impl MacroEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ActivityLevel, Gender};
+    use crate::user::{ActivityLevel, Gender};
 
     #[test]
     fn test_high_protein_balanced_ffm_anchoring() {

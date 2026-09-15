@@ -1,4 +1,4 @@
-use super::error::NutritionError;
+use crate::nutrition_error::NutritionError;
 use serde::{Deserialize, Serialize};
 
 /// 生理激素代谢表型（用于非二元性别或跨性别代谢基准计算）

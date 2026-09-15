@@ -1,4 +1,4 @@
-use crate::models::{ActivityLevel, Gender, UserProfile};
+use crate::user::{ActivityLevel, Gender, UserProfile};
 use serde::{Deserialize, Serialize};
 
 /// 临床医学与运动经验性饮水目标计算引擎。

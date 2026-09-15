@@ -1,6 +1,6 @@
-use crate::storage::StorageError;
-use crate::storage::db::StorageEngine;
-use crate::storage::models::{FoodRecord, FoodSource, Nutriments100g};
+use crate::db::StorageEngine;
+use crate::records::{FoodRecord, FoodSource, Nutriments100g};
+use crate::storage_error::StorageError;
 
 /// 用于初始离线数据库填充的标准精选参考食品种子数据。
 struct SeedFood {

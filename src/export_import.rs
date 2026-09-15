@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use crate::storage::StorageEngine;
-use crate::storage::error::StorageError;
-use crate::storage::models::{
+use crate::db::StorageEngine;
+use crate::records::{
     ActivityLogRecord, FastingSessionRecord, FoodWithNutriments, IntakeLogRecord, RecipeWithDetails, UserGoalRecord,
     UserProfileRecord, WaterLogRecord, WeightLogRecord,
 };
+use crate::storage_error::StorageError;
 
 /// 批量数据导入统计结果
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -144,12 +144,12 @@ impl ExportImportEngine {
 
         for recipe in &backup.recipes {
             // 逐原料解析：缺失食物不再静默丢弃，而是记入 stats.errors 供调用方与用户感知。
-            let mut ingredient_inputs: Vec<crate::calc::recipe::RecipeIngredientInput> =
+            let mut ingredient_inputs: Vec<crate::recipe::RecipeIngredientInput> =
                 Vec::with_capacity(recipe.ingredients.len());
             for i in &recipe.ingredients {
                 match storage.get_food_with_nutriments(&i.food_id) {
                     Ok(Some(food_tuple)) => {
-                        ingredient_inputs.push(crate::calc::recipe::RecipeIngredientInput::simple(
+                        ingredient_inputs.push(crate::recipe::RecipeIngredientInput::simple(
                             &i.food_id,
                             &i.food_name,
                             i.amount,
@@ -330,7 +330,7 @@ impl ExportImportEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::models::{
+    use crate::records::{
         FoodRecord, FoodSource, MealType, Nutriments100g, RecipeIngredientRecord, RecipeRecord, RecipeWithDetails,
     };
 

@@ -60,14 +60,24 @@ cargo run -- export
 ├── PROJECT_INTRODUCTION.md   # 架构全文
 ├── WALKTHROUGH.md            # 子系统交付与验证笔记
 ├── Cargo.toml
-└── src/
-    ├── calc/                 # 代谢与营养计算
-    ├── storage/              # SQLite 持久化与备份
-    ├── client/               # 条码 / OpenFoodFacts
-    ├── models/
-    ├── lib.rs
-    └── main.rs               # CLI
+├── rustfmt.toml              # max_width = 120
+└── src/                      # 扁平模块结构，全部模块直接置于此
+    ├── lib.rs                # 模块声明 + 统一公开 API re-export
+    ├── main.rs               # CLI
+    ├── energy.rs             # 代谢与营养计算：能量、体重、运动、目标、宏量、微量、食谱……
+    ├── dynamic_weight.rs
+    ├── db.rs                 # 持久化：SQLite 主库、缓存库、schema、种子、导入导出
+    ├── cache_db.rs
+    ├── records.rs            # 存储数据模型
+    ├── barcode.rs            # 外部数据：条码校验、OpenFoodFacts
+    ├── remote_food_client.rs
+    ├── user.rs               # 领域模型
+    └── ...                   # 其余模块同级平铺（共 26 个）
 ```
+
+> 模块采用扁平结构而非 `calc/`、`storage/` 等子目录：模块总量适中，扁平化可避免
+> `crate::calc::energy::EnergyCalc` 这类冗长路径。调用方统一从 crate 根引入
+> （`use litebalance_core::EnergyCalc`），内部模块可自由调整而不影响外部引用。
 
 ## 状态
 

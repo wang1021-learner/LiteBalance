@@ -11,10 +11,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::calc::workout_compensation::{
+use crate::user::UserProfile;
+use crate::workout_compensation::{
     CompensationMode, ExerciseModality, NutritionState, WorkoutCompensationCalc, WorkoutCompensationResult,
 };
-use crate::models::UserProfile;
 
 /// 身体活动大类分类
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -403,7 +403,7 @@ impl DailyEnergyBalance {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ActivityLevel, Gender};
+    use crate::user::{ActivityLevel, Gender};
 
     #[test]
     fn test_calculate_gross_kcal_formula() {

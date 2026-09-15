@@ -1,4 +1,4 @@
-use crate::models::{ActivityLevel, Gender, HormoneProfile, UserProfile};
+use crate::user::{ActivityLevel, Gender, HormoneProfile, UserProfile};
 
 /// 能量计算参考标准规范
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

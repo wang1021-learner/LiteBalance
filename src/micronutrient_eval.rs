@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::Gender;
-use crate::storage::models::Nutriments100g;
+use crate::records::Nutriments100g;
+use crate::user::Gender;
 
 /// 临床推荐摄入量标准分类（基于 NASEM DRI）
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -94,7 +94,7 @@ impl MicronutrientEvaluator {
         let is_female = match gender {
             Gender::Female => true,
             Gender::Male => false,
-            Gender::NonBinary(h) => matches!(h, crate::models::HormoneProfile::EstrogenTypical),
+            Gender::NonBinary(h) => matches!(h, crate::user::HormoneProfile::EstrogenTypical),
         };
 
         let mut assessments = Vec::new();

@@ -14,8 +14,8 @@ use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
-use crate::storage::error::StorageError;
-use crate::storage::models::Nutriments100g;
+use crate::records::Nutriments100g;
+use crate::storage_error::StorageError;
 
 /// 缓存食品记录数据模型
 #[derive(Debug, Clone, Serialize, Deserialize)]

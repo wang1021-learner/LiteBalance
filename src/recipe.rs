@@ -1,4 +1,4 @@
-use crate::storage::models::Nutriments100g;
+use crate::records::Nutriments100g;
 use serde::{Deserialize, Serialize};
 
 /// 带有液体密度支持的食谱原料换算工具。

@@ -8,9 +8,9 @@
 //! 4. 临床级内分泌安全红线（Safety Floor）：强制男性 ≥1500 kcal，女性 ≥1200 kcal，
 //!    防止下丘脑-垂体-性腺轴与甲状腺内分泌损伤。
 
-use crate::calc::energy::EnergyCalc;
-use crate::calc::macro_engine::{DietProtocol, MacroEngine};
-use crate::models::{Gender, HormoneProfile, UserProfile};
+use crate::energy::EnergyCalc;
+use crate::macro_engine::{DietProtocol, MacroEngine};
+use crate::user::{Gender, HormoneProfile, UserProfile};
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
@@ -359,7 +359,7 @@ impl GoalProfileEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ActivityLevel, Gender, UserProfile};
+    use crate::user::{ActivityLevel, Gender, UserProfile};
 
     fn make_test_user(gender: Gender, weight: f64) -> UserProfile {
         UserProfile::new(28, 175.0, weight, gender, ActivityLevel::LowActive).unwrap()
