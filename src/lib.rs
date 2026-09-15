@@ -1,6 +1,10 @@
 //! # 轻衡 (LiteBalance Core) 营养与代谢计算核心引擎
 //!
 //! 基于 Rust 构建的高性能、本地优先（Local-First）移动端临床代谢与营养计算共享核心引擎（Shared Rust Core）。
+//!
+//! 移动端请优先使用 [`ffi`] 模块中的 [`ffi::LiteBalanceSession`]（UniFFI 导出），
+//! 不要直接把宽泛的 crate 根 API 全部绑定到 Kotlin/Swift。
+//!
 //! 核心实现：
 //! - NASEM 2023 官方能量参考摄入量（DRI for Energy）双能量模型与回归方程矩阵。
 //! - 美国国家卫生研究院（NIH）Kevin Hall 动态能量平衡非线性微分方程模型（Lancet 2011）。
@@ -29,6 +33,9 @@
 //! - **持久化存储**：[`db`]、[`cache_db`]、[`schema`]、[`records`]、[`seed`]、[`export_import`]、[`storage_error`]
 //! - **外部数据客户端**：[`barcode`]、[`remote_food_client`]
 //! - **领域模型**：[`user`]、[`nutrition_error`]
+//! - **移动端门面**：[`ffi`]
+
+uniffi::setup_scaffolding!("litebalance");
 
 // ---------- 代谢与营养计算 ----------
 pub mod activity;
@@ -63,6 +70,9 @@ pub mod remote_food_client;
 // ---------- 领域模型 ----------
 pub mod nutrition_error;
 pub mod user;
+
+// ---------- 移动端 UniFFI 门面 ----------
+pub mod ffi;
 
 // ============================================================================
 // 统一公开 API 门面（crate 根 re-export）
@@ -122,3 +132,9 @@ pub use remote_food_client::{
 // ---------- 领域模型 ----------
 pub use nutrition_error::NutritionError;
 pub use user::{ActivityLevel, Gender, HormoneProfile, ReproductiveStatus, UserProfile};
+
+// ---------- 移动端 UniFFI 门面（宿主 App 主要依赖面） ----------
+pub use ffi::{
+    FfiBudgetResult, FfiDailySummary, FfiEnergyComparison, FfiError, FfiFoodItem, FfiGoalInput, FfiIntakeLog,
+    FfiPlanResult, FfiUserInput, FfiUserProfile, FfiWaterSummary, FfiWeightPoint, LiteBalanceSession,
+};

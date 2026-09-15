@@ -1,1 +1,10 @@
 /target
+# UniFFI 生成本地大文件可按需忽略；Kotlin 源建议提交到 Android 工程
+/bindings/android/**/*.class
+# Android 构建产物与 IDE
+apps/android/.gradle/
+apps/android/.idea/
+apps/android/.kotlin/
+apps/android/**/build/
+apps/android/local.properties
+apps/android/app/src/main/jniLibs/**/*.so

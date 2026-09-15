@@ -23,7 +23,7 @@
 | 计算核心 | Rust 2024：能量（NASEM 2023）、动态体重（NIH Kevin Hall）、运动补偿、目标预算、日界、宏量/碳水循环、微量 DRI、食谱、断食、饮水、趋势与报表等 |
 | 存储 | SQLite + FTS5 主库；外部食物缓存库 |
 | 外部数据 | GS1 条码校验、OpenFoodFacts 查询 |
-| 移动端方向 | Android Jetpack Compose + iOS SwiftUI，经 UniFFI 桥接（壳层不在本仓库） |
+| 移动端方向 | UniFFI 门面 `LiteBalanceSession`（`src/ffi.rs`）+ Android Compose 壳（`apps/android`）；iOS 待 Mac（`docs/ios-next.md`） |
 | 本机工具 | CLI：`plan` / `search` / `log-food` / `summary` / `dri` / `report` / `export` / `import` 等 |
 
 ## 快速开始
@@ -64,20 +64,16 @@ cargo run -- export
 ├── README.md                 # 项目介绍（本文件）
 ├── PROJECT_INTRODUCTION.md   # 架构全文
 ├── WALKTHROUGH.md            # 子系统交付与验证笔记
+├── docs/                     # android-build / ios-next 等
+├── apps/
+│   └── android/              # Jetpack Compose 壳（Android Studio 打开此目录）
 ├── Cargo.toml
 ├── rustfmt.toml              # max_width = 120
 └── src/                      # 扁平模块结构，全部模块直接置于此
-    ├── lib.rs                # 模块声明 + 统一公开 API re-export
+    ├── lib.rs                # 模块声明 + 统一公开 API re-export + UniFFI
+    ├── ffi.rs                # 移动端窄门面 LiteBalanceSession
     ├── main.rs               # CLI
-    ├── energy.rs             # 代谢与营养计算：能量、体重、运动、目标、宏量、微量、食谱……
-    ├── dynamic_weight.rs
-    ├── db.rs                 # 持久化：SQLite 主库、缓存库、schema、种子、导入导出
-    ├── cache_db.rs
-    ├── records.rs            # 存储数据模型
-    ├── barcode.rs            # 外部数据：条码校验、OpenFoodFacts
-    ├── remote_food_client.rs
-    ├── user.rs               # 领域模型
-    └── ...                   # 其余模块同级平铺（共 26 个）
+    └── ...                   # 计算 / 存储 / 外部客户端等
 ```
 
 > 模块采用扁平结构而非 `calc/`、`storage/` 等子目录：模块总量适中，扁平化可避免
