@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use crate::models::{Gender, UserProfile};
 use crate::calc::energy::EnergyCalc;
+use crate::models::{Gender, UserProfile};
+use serde::{Deserialize, Serialize};
 
 /// 美国国立卫生研究院（NIH）Kevin Hall 动态能量平衡模型（Lancet 2011）生理学常数
 pub mod constants {
@@ -300,26 +300,14 @@ mod tests {
     #[test]
     fn test_dynamic_weight_loss_plateau() {
         // 成年男性：30岁，175cm，90kg，久坐
-        let profile = UserProfile::new(
-            30,
-            175.0,
-            90.0,
-            Gender::Male,
-            ActivityLevel::Inactive,
-        ).unwrap();
+        let profile = UserProfile::new(30, 175.0, 90.0, Gender::Male, ActivityLevel::Inactive).unwrap();
 
         // 初始基线平衡消耗约 2800 kcal
         let maintenance = EnergyCalc::nasem_2023(&profile);
         // 施加每日 500 kcal 赤字
         let daily_intake = maintenance - 500.0;
 
-        let sim = DynamicWeightPlanner::simulate(
-            &profile,
-            Some(28.0),
-            daily_intake,
-            365,
-            Some(75.0),
-        );
+        let sim = DynamicWeightPlanner::simulate(&profile, Some(28.0), daily_intake, 365, Some(75.0));
 
         assert!(sim.final_weight_kg < 90.0);
         assert!(sim.metabolic_adaptation_kcal > 50.0);
@@ -330,13 +318,7 @@ mod tests {
     #[test]
     fn test_reverse_solver_calculates_realistic_intake() {
         // 30岁男性，175cm，85kg，积极活动，目标在 180 天内减至 78kg
-        let profile = UserProfile::new(
-            30,
-            175.0,
-            85.0,
-            Gender::Male,
-            ActivityLevel::Active,
-        ).unwrap();
+        let profile = UserProfile::new(30, 175.0, 85.0, Gender::Male, ActivityLevel::Active).unwrap();
 
         let target_weight = 78.0;
         let days = 180;

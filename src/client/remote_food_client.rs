@@ -149,9 +149,8 @@ impl RemoteFoodClient {
         let mut headers = HeaderMap::new();
         headers.insert(
             USER_AGENT,
-            HeaderValue::from_str(&ua).map_err(|e| {
-                RemoteClientError::ParseError(format!("无效的 User-Agent 字符串: {}", e))
-            })?,
+            HeaderValue::from_str(&ua)
+                .map_err(|e| RemoteClientError::ParseError(format!("无效的 User-Agent 字符串: {}", e)))?,
         );
 
         let http_client = Client::builder()
@@ -243,8 +242,7 @@ impl RemoteFoodClient {
             .ok_or_else(|| RemoteClientError::ParseError("未找到 product 根对象".into()))?;
 
         // 5. 数据清洗与提取
-        let (food_name, brand, serving_qty, serving_unit, nutriments) =
-            Self::clean_product_data(product_obj);
+        let (food_name, brand, serving_qty, serving_unit, nutriments) = Self::clean_product_data(product_obj);
 
         let attribution = "Open Food Facts (ODbL)".to_string();
 
@@ -335,8 +333,12 @@ impl RemoteFoodClient {
             }
 
             // 三大宏量营养素
-            nutriments.proteins_100 = extract_f64("proteins_100g").or_else(|| extract_f64("proteins")).unwrap_or(0.0);
-            nutriments.carbohydrates_100 = extract_f64("carbohydrates_100g").or_else(|| extract_f64("carbohydrates")).unwrap_or(0.0);
+            nutriments.proteins_100 = extract_f64("proteins_100g")
+                .or_else(|| extract_f64("proteins"))
+                .unwrap_or(0.0);
+            nutriments.carbohydrates_100 = extract_f64("carbohydrates_100g")
+                .or_else(|| extract_f64("carbohydrates"))
+                .unwrap_or(0.0);
             nutriments.fat_100 = extract_f64("fat_100g").or_else(|| extract_f64("fat")).unwrap_or(0.0);
 
             // 细分脂肪与糖分
@@ -379,8 +381,10 @@ impl RemoteFoodClient {
                 nutriments.vitamin_c_mg_100 = Some(c_g * 1000.0);
             }
 
-            nutriments.magnesium_mg_100 = extract_f64("magnesium_mg_100g").or_else(|| extract_f64("magnesium_100g").map(|g| g * 1000.0));
-            nutriments.zinc_mg_100 = extract_f64("zinc_mg_100g").or_else(|| extract_f64("zinc_100g").map(|g| g * 1000.0));
+            nutriments.magnesium_mg_100 =
+                extract_f64("magnesium_mg_100g").or_else(|| extract_f64("magnesium_100g").map(|g| g * 1000.0));
+            nutriments.zinc_mg_100 =
+                extract_f64("zinc_mg_100g").or_else(|| extract_f64("zinc_100g").map(|g| g * 1000.0));
             nutriments.vitamin_a_ug_100 = extract_f64("vitamin-a_100g").map(|g| g * 1_000_000.0);
             nutriments.vitamin_d_ug_100 = extract_f64("vitamin-d_100g").map(|g| g * 1_000_000.0);
         }

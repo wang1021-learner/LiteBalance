@@ -22,26 +22,23 @@ pub mod models;
 pub mod storage;
 
 pub use calc::{
-    find_activity_by_code, get_standard_activity_catalog, ActivityCatalogItem, ActivityCategory,
-    ActivityEnergyCalculator, AdaptiveBudgetResult, CarbCyclingDayType, CarbCyclingSchedule,
-    CompensationMode, CustomFoodDraft, CustomFoodEngine, DailyDriReport, DailyEnergyBalance,
-    DailyIntakeData, DailyWeightData, DayBoundaryConfig, DayBoundaryEngine, DietProtocol,
-    DriStandard, DriStatus, DynamicSimulationResult, DynamicWeightPlanner, EnergyAnalytics,
-    EnergyCalc, EnergyComparison, EnergyStandard, ExerciseModality, FastingSessionData,
-    GoalConfig, GoalKind, GoalProfileEngine, HabitAnalytics, InputBasis, MacroAnalytics,
-    MacroEngine, MacroTarget, MicronutrientEvaluator, NormalizedCustomFood, NutrientAssessment,
-    NutritionState, PeriodicAnalyticsEngine, PeriodicReport, TrajectoryDay, UnitConverter,
-    UnitSystem, WorkoutCompensationCalc, WorkoutCompensationResult,
+    ActivityCatalogItem, ActivityCategory, ActivityEnergyCalculator, AdaptiveBudgetResult, CarbCyclingDayType,
+    CarbCyclingSchedule, CompensationMode, CustomFoodDraft, CustomFoodEngine, DailyDriReport, DailyEnergyBalance,
+    DailyIntakeData, DailyWeightData, DayBoundaryConfig, DayBoundaryEngine, DietProtocol, DriStandard, DriStatus,
+    DynamicSimulationResult, DynamicWeightPlanner, EnergyAnalytics, EnergyCalc, EnergyComparison, EnergyStandard,
+    ExerciseModality, FastingSessionData, GoalConfig, GoalKind, GoalProfileEngine, HabitAnalytics, InputBasis,
+    MacroAnalytics, MacroEngine, MacroTarget, MicronutrientEvaluator, NormalizedCustomFood, NutrientAssessment,
+    NutritionState, PeriodicAnalyticsEngine, PeriodicReport, TrajectoryDay, UnitConverter, UnitSystem,
+    WorkoutCompensationCalc, WorkoutCompensationResult, find_activity_by_code, get_standard_activity_catalog,
 };
 pub use client::{
-    BarcodeError, BarcodeType, BarcodeValidator, NormalizedBarcode, RemoteClientError,
-    RemoteFoodClient, RemoteFoodProduct, SlidingWindowRateLimiter, DEFAULT_USER_AGENT,
-    OFF_API_BASE_URL,
+    BarcodeError, BarcodeType, BarcodeValidator, DEFAULT_USER_AGENT, NormalizedBarcode, OFF_API_BASE_URL,
+    RemoteClientError, RemoteFoodClient, RemoteFoodProduct, SlidingWindowRateLimiter,
 };
 pub use models::{ActivityLevel, Gender, HormoneProfile, NutritionError, UserProfile};
 pub use storage::{
-    ActivityLogRecord, CacheStats, CacheStorageEngine, CachedFoodRecord, DailySummary,
-    ExportImportEngine, FastingSessionRecord, FoodRecord, FoodSource, FoodWithNutriments,
-    ImportStats, IntakeLogRecord, LiteBalanceBackup, MealType, Nutriments100g, NutriTrackerBackup,
-    StorageEngine, StorageError, UserGoalRecord, UserProfileRecord, WaterLogRecord, WeightLogRecord,
+    ActivityLogRecord, CacheStats, CacheStorageEngine, CachedFoodRecord, DailySummary, ExportImportEngine,
+    FastingSessionRecord, FoodRecord, FoodSource, FoodWithNutriments, ImportStats, IntakeLogRecord, LiteBalanceBackup,
+    MealType, NutriTrackerBackup, Nutriments100g, StorageEngine, StorageError, UserGoalRecord, UserProfileRecord,
+    WaterLogRecord, WeightLogRecord,
 };

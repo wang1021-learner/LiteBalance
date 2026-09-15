@@ -413,16 +413,26 @@ mod tests {
         // 育龄女性（25岁）18mg vs 年轻男性（25岁）8mg vs 绝经后女性（55岁）8mg
         let empty_items: Vec<(f64, Nutriments100g)> = vec![];
 
-        let female_young = MicronutrientEvaluator::evaluate_daily_intake("2026-05-14", Gender::Female, 25, &empty_items);
-        let iron_fy = female_young.assessments.iter().find(|a| a.nutrient_id == "iron").unwrap();
+        let female_young =
+            MicronutrientEvaluator::evaluate_daily_intake("2026-05-14", Gender::Female, 25, &empty_items);
+        let iron_fy = female_young
+            .assessments
+            .iter()
+            .find(|a| a.nutrient_id == "iron")
+            .unwrap();
         assert_eq!(iron_fy.target_value, 18.0);
 
         let male_young = MicronutrientEvaluator::evaluate_daily_intake("2026-05-14", Gender::Male, 25, &empty_items);
         let iron_my = male_young.assessments.iter().find(|a| a.nutrient_id == "iron").unwrap();
         assert_eq!(iron_my.target_value, 8.0);
 
-        let female_older = MicronutrientEvaluator::evaluate_daily_intake("2026-05-14", Gender::Female, 55, &empty_items);
-        let iron_fo = female_older.assessments.iter().find(|a| a.nutrient_id == "iron").unwrap();
+        let female_older =
+            MicronutrientEvaluator::evaluate_daily_intake("2026-05-14", Gender::Female, 55, &empty_items);
+        let iron_fo = female_older
+            .assessments
+            .iter()
+            .find(|a| a.nutrient_id == "iron")
+            .unwrap();
         assert_eq!(iron_fo.target_value, 8.0);
     }
 
@@ -436,10 +446,7 @@ mod tests {
 
         let nutriments_without_zinc = Nutriments100g::simple(100.0, 10.0, 10.0, 2.0); // 锌为 None 未测
 
-        let consumed = vec![
-            (200.0, nutriments_with_zinc),
-            (800.0, nutriments_without_zinc),
-        ];
+        let consumed = vec![(200.0, nutriments_with_zinc), (800.0, nutriments_without_zinc)];
 
         let report = MicronutrientEvaluator::evaluate_daily_intake("2026-05-14", Gender::Male, 30, &consumed);
         let zinc = report.assessments.iter().find(|a| a.nutrient_id == "zinc").unwrap();
@@ -447,7 +454,9 @@ mod tests {
         assert_eq!(zinc.intake_amount, 2.0);
         assert_eq!(zinc.data_coverage_pct, 20.0);
         // 覆盖度 20% (< 50%)，必须归类为 LowDataCoverage，而非 Deficient！
-        assert!(matches!(zinc.status, DriStatus::LowDataCoverage { coverage_pct } if (coverage_pct - 20.0).abs() < 1e-4));
+        assert!(
+            matches!(zinc.status, DriStatus::LowDataCoverage { coverage_pct } if (coverage_pct - 20.0).abs() < 1e-4)
+        );
         // 不得产生误导性的虚假报警
         assert!(!report.warnings.iter().any(|w| w.contains("Zinc")));
     }

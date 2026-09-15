@@ -16,9 +16,8 @@ pub use db::StorageEngine;
 pub use error::StorageError;
 pub use export_import::{ExportImportEngine, ImportStats, LiteBalanceBackup, NutriTrackerBackup};
 pub use models::{
-    ActivityLogRecord, DailySummary, FastingSessionRecord, FoodRecord, FoodSource,
-    FoodWithNutriments, IntakeLogRecord, MealType, Nutriments100g, RecipeIngredientRecord,
-    RecipeRecord, RecipeWithDetails, UserGoalRecord, UserProfileRecord, WaterLogRecord, WeightLogRecord,
+    ActivityLogRecord, DailySummary, FastingSessionRecord, FoodRecord, FoodSource, FoodWithNutriments, IntakeLogRecord,
+    MealType, Nutriments100g, RecipeIngredientRecord, RecipeRecord, RecipeWithDetails, UserGoalRecord,
+    UserProfileRecord, WaterLogRecord, WeightLogRecord,
 };
 pub use seed::seed_default_foods_if_empty;
-

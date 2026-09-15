@@ -1,12 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+use crate::storage::StorageEngine;
 use crate::storage::error::StorageError;
 use crate::storage::models::{
-    ActivityLogRecord, FastingSessionRecord, FoodWithNutriments,
-    IntakeLogRecord, RecipeWithDetails, UserGoalRecord,
+    ActivityLogRecord, FastingSessionRecord, FoodWithNutriments, IntakeLogRecord, RecipeWithDetails, UserGoalRecord,
     UserProfileRecord, WaterLogRecord, WeightLogRecord,
 };
-use crate::storage::StorageEngine;
 
 /// 批量数据导入统计结果
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -74,10 +73,7 @@ pub struct ExportImportEngine;
 
 impl ExportImportEngine {
     /// 导出包含全部本地表数据的单文件 JSON 备份
-    pub fn export_native_backup(
-        storage: &StorageEngine,
-        user_id: &str,
-    ) -> Result<NutriTrackerBackup, StorageError> {
+    pub fn export_native_backup(storage: &StorageEngine, user_id: &str) -> Result<NutriTrackerBackup, StorageError> {
         let user = storage.get_user(user_id)?;
         let foods = storage.list_all_foods()?;
         let intakes = storage.list_all_intakes(user_id)?;
@@ -193,10 +189,9 @@ impl ExportImportEngine {
                 &ingredient_inputs,
             ) {
                 Ok(_) => stats.recipes_imported += 1,
-                Err(e) => stats.errors.push(format!(
-                    "食谱「{}」保存失败: {}",
-                    recipe.recipe.name, e
-                )),
+                Err(e) => stats
+                    .errors
+                    .push(format!("食谱「{}」保存失败: {}", recipe.recipe.name, e)),
             }
         }
 
@@ -209,10 +204,7 @@ impl ExportImportEngine {
     }
 
     /// 将用户的饮食摄入历史导出为 RFC-4180 标准 CSV 文件
-    pub fn export_intakes_csv(
-        storage: &StorageEngine,
-        user_id: &str,
-    ) -> Result<String, StorageError> {
+    pub fn export_intakes_csv(storage: &StorageEngine, user_id: &str) -> Result<String, StorageError> {
         let intakes = storage.list_all_intakes(user_id)?;
         let mut wtr = csv::WriterBuilder::new().from_writer(vec![]);
 
@@ -284,15 +276,26 @@ impl ExportImportEngine {
                 "",
                 "",
                 opt_num(food.as_ref().and_then(|f| f.serving_quantity)).as_str(),
-                food.as_ref().and_then(|f| f.serving_unit.as_deref()).unwrap_or_default(),
+                food.as_ref()
+                    .and_then(|f| f.serving_unit.as_deref())
+                    .unwrap_or_default(),
                 "",
                 "",
                 food.as_ref().and_then(|f| f.image_url.as_deref()).unwrap_or_default(),
                 "",
-                n.as_ref().map(|x| x.energy_kcal_100.to_string()).unwrap_or_default().as_str(),
-                n.as_ref().map(|x| x.carbohydrates_100.to_string()).unwrap_or_default().as_str(),
+                n.as_ref()
+                    .map(|x| x.energy_kcal_100.to_string())
+                    .unwrap_or_default()
+                    .as_str(),
+                n.as_ref()
+                    .map(|x| x.carbohydrates_100.to_string())
+                    .unwrap_or_default()
+                    .as_str(),
                 n.as_ref().map(|x| x.fat_100.to_string()).unwrap_or_default().as_str(),
-                n.as_ref().map(|x| x.proteins_100.to_string()).unwrap_or_default().as_str(),
+                n.as_ref()
+                    .map(|x| x.proteins_100.to_string())
+                    .unwrap_or_default()
+                    .as_str(),
                 opt_num(n.as_ref().and_then(|x| x.sugars_100)).as_str(),
                 opt_num(n.as_ref().and_then(|x| x.saturated_fat_100)).as_str(),
                 opt_num(n.as_ref().and_then(|x| x.fiber_100)).as_str(),
@@ -317,22 +320,18 @@ impl ExportImportEngine {
             .map_err(|e| StorageError::Conversion(format!("CSV 写入记录错误: {}", e)))?;
         }
 
-        let bytes = wtr.into_inner().map_err(|e| {
-            StorageError::Conversion(format!("CSV 序列化错误: {}", e))
-        })?;
-        String::from_utf8(bytes).map_err(|e| {
-            StorageError::Conversion(format!("UTF-8 字符集转换错误: {}", e))
-        })
+        let bytes = wtr
+            .into_inner()
+            .map_err(|e| StorageError::Conversion(format!("CSV 序列化错误: {}", e)))?;
+        String::from_utf8(bytes).map_err(|e| StorageError::Conversion(format!("UTF-8 字符集转换错误: {}", e)))
     }
-
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::storage::models::{
-        FoodRecord, FoodSource, MealType, Nutriments100g, RecipeIngredientRecord, RecipeRecord,
-        RecipeWithDetails,
+        FoodRecord, FoodSource, MealType, Nutriments100g, RecipeIngredientRecord, RecipeRecord, RecipeWithDetails,
     };
 
     /// 回归测试：食谱原料引用了食物库中不存在的食物时，
@@ -415,16 +414,18 @@ mod tests {
         let storage1 = StorageEngine::open_in_memory().unwrap();
         let user_id = "user-native-backup";
 
-        storage1.insert_user_raw(&UserProfileRecord {
-            id: user_id.into(),
-            name: "Alice".into(),
-            birthday: "1995-06-15".into(),
-            height_cm: 168.0,
-            weight_kg: 62.0,
-            gender: "female".into(),
-            hormone_profile: None,
-            activity_level: "active".into(),
-        }).unwrap();
+        storage1
+            .insert_user_raw(&UserProfileRecord {
+                id: user_id.into(),
+                name: "Alice".into(),
+                birthday: "1995-06-15".into(),
+                height_cm: 168.0,
+                weight_kg: 62.0,
+                gender: "female".into(),
+                hormone_profile: None,
+                activity_level: "active".into(),
+            })
+            .unwrap();
 
         let apple = FoodRecord {
             id: "apple-1".into(),
@@ -435,22 +436,28 @@ mod tests {
             serving_unit: Some("g".into()),
             image_url: None,
         };
-        storage1.insert_food(&apple, &Nutriments100g::simple(52.0, 14.0, 0.3, 0.2)).unwrap();
+        storage1
+            .insert_food(&apple, &Nutriments100g::simple(52.0, 14.0, 0.3, 0.2))
+            .unwrap();
 
-        storage1.log_intake(user_id, "apple-1", 150.0, "g", MealType::Snack, "2026-05-14T15:00:00").unwrap();
+        storage1
+            .log_intake(user_id, "apple-1", 150.0, "g", MealType::Snack, "2026-05-14T15:00:00")
+            .unwrap();
         storage1.log_water(user_id, 500, "2026-05-14T10:00:00").unwrap();
-        storage1.set_user_goal(&UserGoalRecord {
-            id: "goal-alice".into(),
-            user_id: user_id.into(),
-            kind: "lose_weight".into(),
-            target_weight_kg: Some(58.0),
-            weekly_rate_kg: -0.5,
-            taper_enabled: true,
-            adaptive_enabled: true,
-            manual_calorie_offset: 0.0,
-            created_at: "2026-05-14T08:00:00Z".into(),
-            updated_at: "2026-05-14T08:00:00Z".into(),
-        }).unwrap();
+        storage1
+            .set_user_goal(&UserGoalRecord {
+                id: "goal-alice".into(),
+                user_id: user_id.into(),
+                kind: "lose_weight".into(),
+                target_weight_kg: Some(58.0),
+                weekly_rate_kg: -0.5,
+                taper_enabled: true,
+                adaptive_enabled: true,
+                manual_calorie_offset: 0.0,
+                created_at: "2026-05-14T08:00:00Z".into(),
+                updated_at: "2026-05-14T08:00:00Z".into(),
+            })
+            .unwrap();
 
         // 1. 导出备份
         let backup = ExportImportEngine::export_native_backup(&storage1, user_id).unwrap();

@@ -23,7 +23,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.85.0
-          components: clippy
+          components: clippy, rustfmt
 
       - name: 缓存 cargo 构建产物
         uses: actions/cache@v4
@@ -35,9 +35,10 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      # 说明：暂未纳入 `cargo fmt --check`。现有代码库存在约 273 处与 rustfmt 默认风格的差异
-      # （多为刻意保留的较宽单行），若强制启用会产生覆盖全库的格式化 diff 并淹没实质变更。
-      # 如需纳入，建议单独提交一次全库格式化后再在此处开启该检查。
+      # 行宽规则见 rustfmt.toml（max_width = 120，为保留临床回归方程等单行表达式）。
+      # 全库已一次性格式化至该标准，此后新增代码须保持此格式。
+      - name: 格式检查
+        run: cargo fmt --all -- --check
 
       # 必须带 --all-targets：否则 #[cfg(test)] 测试代码中的 lint 会被漏检。
       - name: Clippy 严格模式（零警告）

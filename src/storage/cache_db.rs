@@ -9,10 +9,10 @@
 //! 2. 保证用户核心备份（`litebalance_backup.json`）轻量纯净，不随网络爬取缓存膨胀；
 //! 3. 支持无痛随时清空、过期驱逐与重建，完全不影响用户个人饮食打卡与自建食谱。
 
-use std::sync::{Arc, Mutex};
 use chrono::{DateTime, Utc};
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 
 use crate::storage::error::StorageError;
 use crate::storage::models::Nutriments100g;
@@ -66,9 +66,7 @@ impl CacheStorageEngine {
     ///
     /// 锁中毒时返回 [`StorageError::LockPoisoned`] 而非 panic，避免崩溃跨越移动端 FFI 边界。
     fn conn(&self) -> Result<std::sync::MutexGuard<'_, Connection>, StorageError> {
-        self.conn
-            .lock()
-            .map_err(|e| StorageError::LockPoisoned(e.to_string()))
+        self.conn.lock().map_err(|e| StorageError::LockPoisoned(e.to_string()))
     }
 
     /// 打开或新建指定路径的独立缓存 SQLite 数据库文件。
@@ -254,9 +252,7 @@ impl CacheStorageEngine {
     pub fn get_cache_stats(&self) -> Result<CacheStats, StorageError> {
         let conn = self.conn()?;
         let mut stmt = conn.prepare("SELECT cached_at, ttl_seconds FROM remote_food_cache")?;
-        let rows = stmt.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-        })?;
+        let rows = stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))?;
 
         let now = Utc::now();
         let mut total = 0;

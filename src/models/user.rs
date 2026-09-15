@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use super::error::NutritionError;
+use serde::{Deserialize, Serialize};
 
 /// 生理激素代谢表型（用于非二元性别或跨性别代谢基准计算）
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

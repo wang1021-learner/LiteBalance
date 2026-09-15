@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::models::{ActivityLevel, Gender, UserProfile};
+use serde::{Deserialize, Serialize};
 
 /// 临床医学与运动经验性饮水目标计算引擎。
 ///
@@ -118,37 +118,19 @@ mod tests {
     fn test_water_nasem_recommendation_scaling() {
         // 活跃男性：NASEM 纯饮水基线 = 3.7 * 0.8 = 2.96 L (2960 ml)
         // 运动活跃补偿 = +500 ml -> 3460 ml -> 舍入到 3450 ml
-        let male = UserProfile::new(
-            28,
-            180.0,
-            80.0,
-            Gender::Male,
-            ActivityLevel::Active,
-        ).unwrap();
+        let male = UserProfile::new(28, 180.0, 80.0, Gender::Male, ActivityLevel::Active).unwrap();
         assert_eq!(WaterCalc::recommend_daily_target(&male), 3450);
 
         // 久坐女性：NASEM 纯饮水基线 = 2.7 * 0.8 = 2.16 L (2160 ml)
         // 久坐补偿 = 0 ml -> 2160 ml -> 舍入到 2150 ml
-        let female = UserProfile::new(
-            25,
-            165.0,
-            55.0,
-            Gender::Female,
-            ActivityLevel::Inactive,
-        ).unwrap();
+        let female = UserProfile::new(25, 165.0, 55.0, Gender::Female, ActivityLevel::Inactive).unwrap();
         assert_eq!(WaterCalc::recommend_daily_target(&female), 2150);
     }
 
     #[test]
     fn test_empirical_weight_scaled() {
         // 80kg 男性 * 35 = 2800 + 500 (活跃) = 3300 ml
-        let male = UserProfile::new(
-            28,
-            180.0,
-            80.0,
-            Gender::Male,
-            ActivityLevel::Active,
-        ).unwrap();
+        let male = UserProfile::new(28, 180.0, 80.0, Gender::Male, ActivityLevel::Active).unwrap();
         assert_eq!(WaterCalc::empirical_weight_scaled(&male), 3300);
     }
 

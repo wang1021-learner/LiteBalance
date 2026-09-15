@@ -1,14 +1,13 @@
+use chrono::NaiveDate;
+use rusqlite::{Connection, params};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use chrono::NaiveDate;
-use rusqlite::{params, Connection};
 use uuid::Uuid;
 
 use super::error::StorageError;
 use super::models::{
-    ActivityLogRecord, DailySummary, FastingSessionRecord, FoodRecord, FoodSource,
-    FoodWithNutriments, IntakeLogRecord, MealType, Nutriments100g, UserGoalRecord,
-    UserProfileRecord, WaterLogRecord, WeightLogRecord,
+    ActivityLogRecord, DailySummary, FastingSessionRecord, FoodRecord, FoodSource, FoodWithNutriments, IntakeLogRecord,
+    MealType, Nutriments100g, UserGoalRecord, UserProfileRecord, WaterLogRecord, WeightLogRecord,
 };
 use super::schema::CREATE_SCHEMA_SQL;
 
@@ -24,9 +23,7 @@ impl StorageEngine {
     /// 相比 `lock().unwrap()`，锁中毒时返回 [`StorageError::LockPoisoned`] 而非 panic，
     /// 避免 panic 跨越移动端 UniFFI 边界导致宿主 App 进程整体崩溃。
     fn conn(&self) -> Result<std::sync::MutexGuard<'_, Connection>, StorageError> {
-        self.conn
-            .lock()
-            .map_err(|e| StorageError::LockPoisoned(e.to_string()))
+        self.conn.lock().map_err(|e| StorageError::LockPoisoned(e.to_string()))
     }
 
     /// 打开内存 SQLite 数据库（单元测试与临时调试专用）。
@@ -121,11 +118,7 @@ impl StorageEngine {
     }
 
     /// 插入或更新食品元数据及其每100g标准营养素。
-    pub fn insert_food(
-        &self,
-        food: &FoodRecord,
-        nutriments: &Nutriments100g,
-    ) -> Result<(), StorageError> {
+    pub fn insert_food(&self, food: &FoodRecord, nutriments: &Nutriments100g) -> Result<(), StorageError> {
         let mut conn = self.conn()?;
         let tx = conn.transaction()?;
 
@@ -306,10 +299,7 @@ impl StorageEngine {
     }
 
     /// 查询食品基础元数据及其每100g标准营养素明细。
-    pub fn get_food_with_nutriments(
-        &self,
-        id: &str,
-    ) -> Result<Option<(FoodRecord, Nutriments100g)>, StorageError> {
+    pub fn get_food_with_nutriments(&self, id: &str) -> Result<Option<(FoodRecord, Nutriments100g)>, StorageError> {
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
@@ -726,12 +716,7 @@ impl StorageEngine {
     }
 
     /// 开启一段新的间歇性断食会话。
-    pub fn start_fasting(
-        &self,
-        user_id: &str,
-        started_at: &str,
-        target_minutes: u32,
-    ) -> Result<String, StorageError> {
+    pub fn start_fasting(&self, user_id: &str, started_at: &str, target_minutes: u32) -> Result<String, StorageError> {
         let conn = self.conn()?;
         let session_id = Uuid::new_v4().to_string();
         conn.execute(
@@ -816,12 +801,8 @@ impl StorageEngine {
         total_weight_override: Option<f64>,
         ingredients: &[crate::calc::recipe::RecipeIngredientInput],
     ) -> Result<crate::storage::models::RecipeWithDetails, StorageError> {
-        let comp = crate::calc::recipe::compute_recipe_nutrition(
-            ingredients,
-            servings,
-            total_weight_override,
-        )
-        .map_err(StorageError::Conversion)?;
+        let comp = crate::calc::recipe::compute_recipe_nutrition(ingredients, servings, total_weight_override)
+            .map_err(StorageError::Conversion)?;
 
         let actual_recipe_id = recipe_id
             .map(|s| s.to_string())
@@ -1076,26 +1057,66 @@ impl StorageEngine {
             carbohydrates_100: ((per_100g.carbohydrates_100 * serving_ratio) * 100.0).round() / 100.0,
             proteins_100: ((per_100g.proteins_100 * serving_ratio) * 100.0).round() / 100.0,
             fat_100: ((per_100g.fat_100 * serving_ratio) * 100.0).round() / 100.0,
-            sugars_100: per_100g.sugars_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            saturated_fat_100: per_100g.saturated_fat_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            fiber_100: per_100g.fiber_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            monounsaturated_fat_100: per_100g.monounsaturated_fat_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            polyunsaturated_fat_100: per_100g.polyunsaturated_fat_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            trans_fat_100: per_100g.trans_fat_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            cholesterol_mg_100: per_100g.cholesterol_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            sodium_mg_100: per_100g.sodium_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            potassium_mg_100: per_100g.potassium_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            magnesium_mg_100: per_100g.magnesium_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            calcium_mg_100: per_100g.calcium_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            iron_mg_100: per_100g.iron_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            zinc_mg_100: per_100g.zinc_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            phosphorus_mg_100: per_100g.phosphorus_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            vitamin_a_ug_100: per_100g.vitamin_a_ug_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            vitamin_c_mg_100: per_100g.vitamin_c_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            vitamin_d_ug_100: per_100g.vitamin_d_ug_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            vitamin_b6_mg_100: per_100g.vitamin_b6_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            vitamin_b12_ug_100: per_100g.vitamin_b12_ug_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
-            niacin_mg_100: per_100g.niacin_mg_100.map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            sugars_100: per_100g
+                .sugars_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            saturated_fat_100: per_100g
+                .saturated_fat_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            fiber_100: per_100g
+                .fiber_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            monounsaturated_fat_100: per_100g
+                .monounsaturated_fat_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            polyunsaturated_fat_100: per_100g
+                .polyunsaturated_fat_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            trans_fat_100: per_100g
+                .trans_fat_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            cholesterol_mg_100: per_100g
+                .cholesterol_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            sodium_mg_100: per_100g
+                .sodium_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            potassium_mg_100: per_100g
+                .potassium_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            magnesium_mg_100: per_100g
+                .magnesium_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            calcium_mg_100: per_100g
+                .calcium_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            iron_mg_100: per_100g
+                .iron_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            zinc_mg_100: per_100g
+                .zinc_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            phosphorus_mg_100: per_100g
+                .phosphorus_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            vitamin_a_ug_100: per_100g
+                .vitamin_a_ug_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            vitamin_c_mg_100: per_100g
+                .vitamin_c_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            vitamin_d_ug_100: per_100g
+                .vitamin_d_ug_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            vitamin_b6_mg_100: per_100g
+                .vitamin_b6_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            vitamin_b12_ug_100: per_100g
+                .vitamin_b12_ug_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
+            niacin_mg_100: per_100g
+                .niacin_mg_100
+                .map(|v| ((v * serving_ratio) * 100.0).round() / 100.0),
         };
 
         Ok(Some(crate::storage::models::RecipeWithDetails {
@@ -1107,10 +1128,7 @@ impl StorageEngine {
     }
 
     /// 列出指定用户创建的所有自建食谱基础信息。
-    pub fn list_user_recipes(
-        &self,
-        user_id: &str,
-    ) -> Result<Vec<crate::storage::models::RecipeRecord>, StorageError> {
+    pub fn list_user_recipes(&self, user_id: &str) -> Result<Vec<crate::storage::models::RecipeRecord>, StorageError> {
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
@@ -1770,12 +1788,7 @@ impl StorageEngine {
             ON CONFLICT(id) DO UPDATE SET
                 amount_ml = excluded.amount_ml
             "#,
-            params![
-                record.id,
-                record.user_id,
-                record.logged_at,
-                record.amount_ml,
-            ],
+            params![record.id, record.user_id, record.logged_at, record.amount_ml,],
         )?;
         Ok(())
     }
@@ -1853,11 +1866,7 @@ impl StorageEngine {
     }
 
     /// 获取用户在指定日期的所有运动打卡记录。
-    pub fn get_activities_for_date(
-        &self,
-        user_id: &str,
-        date: &str,
-    ) -> Result<Vec<ActivityLogRecord>, StorageError> {
+    pub fn get_activities_for_date(&self, user_id: &str, date: &str) -> Result<Vec<ActivityLogRecord>, StorageError> {
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
@@ -1984,11 +1993,7 @@ impl StorageEngine {
     }
 
     /// 聚合计算指定日期用户运动的名义总消耗与代偿后净计入消耗 (gross_burned, net_credited)。
-    pub fn get_daily_activity_totals(
-        &self,
-        user_id: &str,
-        date: &str,
-    ) -> Result<(f64, f64), StorageError> {
+    pub fn get_daily_activity_totals(&self, user_id: &str, date: &str) -> Result<(f64, f64), StorageError> {
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
             r#"
@@ -1998,9 +2003,7 @@ impl StorageEngine {
             "#,
         )?;
 
-        let (gross, net): (f64, f64) = stmt.query_row(params![user_id, date], |row| {
-            Ok((row.get(0)?, row.get(1)?))
-        })?;
+        let (gross, net): (f64, f64) = stmt.query_row(params![user_id, date], |row| Ok((row.get(0)?, row.get(1)?)))?;
 
         Ok((gross, net))
     }
@@ -2140,8 +2143,11 @@ mod tests {
             75.0,
             crate::models::Gender::Male,
             crate::models::ActivityLevel::Active,
-        ).unwrap();
-        storage.insert_user("user_01", "Alex", "1998-05-12", &user_profile).unwrap();
+        )
+        .unwrap();
+        storage
+            .insert_user("user_01", "Alex", "1998-05-12", &user_profile)
+            .unwrap();
 
         // 2. 插入测试食品（三文鱼排：每 100g 含 208 kcal, 0g 碳水, 20g 蛋白质, 13g 脂肪）
         let salmon = FoodRecord {
@@ -2190,7 +2196,8 @@ mod tests {
             80.0,
             crate::models::Gender::Male,
             crate::models::ActivityLevel::Active,
-        ).unwrap();
+        )
+        .unwrap();
         storage.insert_user("user_water", "Bob", "1994-01-01", &user).unwrap();
 
         // 分别打卡 500ml 和 750ml
@@ -2213,15 +2220,20 @@ mod tests {
             55.0,
             crate::models::Gender::Female,
             crate::models::ActivityLevel::Inactive,
-        ).unwrap();
-        storage.insert_user("user_fasting", "Clara", "1999-03-20", &user).unwrap();
+        )
+        .unwrap();
+        storage
+            .insert_user("user_fasting", "Clara", "1999-03-20", &user)
+            .unwrap();
 
         // 1. 初始状态下无活跃会话
         let active = storage.get_active_fasting("user_fasting").unwrap();
         assert!(active.is_none());
 
         // 2. 开启 16:8 断食（960 分钟）
-        let session_id = storage.start_fasting("user_fasting", "2026-09-14T20:00:00Z", 960).unwrap();
+        let session_id = storage
+            .start_fasting("user_fasting", "2026-09-14T20:00:00Z", 960)
+            .unwrap();
 
         // 3. 查询当前活跃断食
         let active = storage.get_active_fasting("user_fasting").unwrap();
@@ -2248,7 +2260,8 @@ mod tests {
             68.0,
             crate::models::Gender::Female,
             crate::models::ActivityLevel::Active,
-        ).unwrap();
+        )
+        .unwrap();
         storage.insert_user("user_chef", "Diana", "1997-08-15", &user).unwrap();
 
         // 1. 将原料存入 foods 表
@@ -2261,7 +2274,9 @@ mod tests {
             serving_unit: Some("g".to_string()),
             image_url: None,
         };
-        storage.insert_food(&oats, &Nutriments100g::simple(380.0, 66.0, 13.0, 7.0)).unwrap();
+        storage
+            .insert_food(&oats, &Nutriments100g::simple(380.0, 66.0, 13.0, 7.0))
+            .unwrap();
 
         let milk = FoodRecord {
             id: "food_milk_test".to_string(),
@@ -2272,7 +2287,9 @@ mod tests {
             serving_unit: Some("ml".to_string()),
             image_url: None,
         };
-        storage.insert_food(&milk, &Nutriments100g::simple(62.0, 4.8, 3.2, 3.4)).unwrap();
+        storage
+            .insert_food(&milk, &Nutriments100g::simple(62.0, 4.8, 3.2, 3.4))
+            .unwrap();
 
         // 2. 保存食谱：100g 燕麦片 + 200ml 牛奶，分 2 份
         let ingredients = vec![
@@ -2339,13 +2356,20 @@ mod tests {
             82.0,
             crate::models::Gender::Male,
             crate::models::ActivityLevel::LowActive,
-        ).unwrap();
+        )
+        .unwrap();
         storage.insert_user("user_trends", "Eric", "1992-11-04", &user).unwrap();
 
         // 1. 记录体重打卡轨迹
-        storage.log_weight("user_trends", 82.0, Some(22.0), "2026-09-01T07:00:00", None).unwrap();
-        storage.log_weight("user_trends", 81.4, Some(21.7), "2026-09-08T07:00:00", None).unwrap();
-        storage.log_weight("user_trends", 80.9, Some(21.4), "2026-09-15T07:00:00", None).unwrap();
+        storage
+            .log_weight("user_trends", 82.0, Some(22.0), "2026-09-01T07:00:00", None)
+            .unwrap();
+        storage
+            .log_weight("user_trends", 81.4, Some(21.7), "2026-09-08T07:00:00", None)
+            .unwrap();
+        storage
+            .log_weight("user_trends", 80.9, Some(21.4), "2026-09-15T07:00:00", None)
+            .unwrap();
 
         let weight_history = storage.get_weight_history("user_trends", 10).unwrap();
         assert_eq!(weight_history.len(), 3);
@@ -2399,7 +2423,9 @@ mod tests {
         storage.log_activity(&act2).unwrap();
 
         // 外部健康 ID 查询防重复测试
-        let fetched_by_ext = storage.get_activity_by_external_id(user_id, "healthkit_workout_999").unwrap();
+        let fetched_by_ext = storage
+            .get_activity_by_external_id(user_id, "healthkit_workout_999")
+            .unwrap();
         assert!(fetched_by_ext.is_some());
         assert_eq!(fetched_by_ext.unwrap().id, "act_001");
 
@@ -2487,7 +2513,8 @@ mod tests {
             70.0,
             crate::models::Gender::Male,
             crate::models::ActivityLevel::Active,
-        ).unwrap();
+        )
+        .unwrap();
         storage.insert_user(user_id, "熬夜测试员", "1998-05-10", &user).unwrap();
 
         let food = FoodRecord {
@@ -2509,42 +2536,54 @@ mod tests {
         storage.insert_food(&food, &nutriments).unwrap();
 
         // 晚餐打卡：2026-09-14 20:00 (500 kcal)
-        storage.log_intake(
-            user_id,
-            "food_test_snack",
-            166.666, // ~500 kcal
-            "g",
-            MealType::Dinner,
-            "2026-09-14T20:00:00",
-        ).unwrap();
+        storage
+            .log_intake(
+                user_id,
+                "food_test_snack",
+                166.666, // ~500 kcal
+                "g",
+                MealType::Dinner,
+                "2026-09-14T20:00:00",
+            )
+            .unwrap();
 
         // 跨午夜夜宵打卡：2026-09-15 02:30 (300 kcal)
-        storage.log_intake(
-            user_id,
-            "food_test_snack",
-            100.0, // 300 kcal
-            "g",
-            MealType::Snack,
-            "2026-09-15T02:30:00",
-        ).unwrap();
+        storage
+            .log_intake(
+                user_id,
+                "food_test_snack",
+                100.0, // 300 kcal
+                "g",
+                MealType::Snack,
+                "2026-09-15T02:30:00",
+            )
+            .unwrap();
 
         // 1. 标准自然日（午夜 00:00 界线）
-        let standard_14 = storage.get_daily_summary_with_boundary(user_id, "2026-09-14", 0).unwrap();
+        let standard_14 = storage
+            .get_daily_summary_with_boundary(user_id, "2026-09-14", 0)
+            .unwrap();
         assert_eq!(standard_14.items_count, 1);
         assert_eq!(standard_14.total_energy_kcal, 500.0);
 
-        let standard_15 = storage.get_daily_summary_with_boundary(user_id, "2026-09-15", 0).unwrap();
+        let standard_15 = storage
+            .get_daily_summary_with_boundary(user_id, "2026-09-15", 0)
+            .unwrap();
         assert_eq!(standard_15.items_count, 1);
         assert_eq!(standard_15.total_energy_kcal, 300.0);
 
         // 2. 生理日界线（凌晨 04:00 界线，即 240 分钟偏移）
         // 9月14日的生理日覆盖：2026-09-14 04:00:00 至 2026-09-15 04:00:00
-        let bio_14 = storage.get_daily_summary_with_boundary(user_id, "2026-09-14", 240).unwrap();
+        let bio_14 = storage
+            .get_daily_summary_with_boundary(user_id, "2026-09-14", 240)
+            .unwrap();
         assert_eq!(bio_14.items_count, 2);
         assert_eq!(bio_14.total_energy_kcal, 800.0);
 
         // 9月15日的生理日覆盖：2026-09-15 04:00:00 至 2026-09-16 04:00:00
-        let bio_15 = storage.get_daily_summary_with_boundary(user_id, "2026-09-15", 240).unwrap();
+        let bio_15 = storage
+            .get_daily_summary_with_boundary(user_id, "2026-09-15", 240)
+            .unwrap();
         assert_eq!(bio_15.items_count, 0);
         assert_eq!(bio_15.total_energy_kcal, 0.0);
     }
@@ -2603,8 +2642,11 @@ mod tests {
             70.0,
             crate::models::Gender::Male,
             crate::models::ActivityLevel::Active,
-        ).unwrap();
-        storage.insert_user(user_id, "测试全能用户", "2000-01-01", &profile).unwrap();
+        )
+        .unwrap();
+        storage
+            .insert_user(user_id, "测试全能用户", "2000-01-01", &profile)
+            .unwrap();
 
         let users = storage.list_all_users().unwrap();
         assert_eq!(users.len(), 1);
@@ -2624,23 +2666,22 @@ mod tests {
         storage.insert_food(&food, &nutriments).unwrap();
 
         // 3. 测试 log_intake -> update_intake -> delete_intake
-        let intake = storage.log_intake(
-            user_id,
-            "food_bread",
-            100.0,
-            "g",
-            MealType::Breakfast,
-            "2026-09-15T08:00:00",
-        ).unwrap();
+        let intake = storage
+            .log_intake(
+                user_id,
+                "food_bread",
+                100.0,
+                "g",
+                MealType::Breakfast,
+                "2026-09-15T08:00:00",
+            )
+            .unwrap();
         assert_eq!(intake.snapshot_energy_kcal, 250.0);
 
         // 更新摄入量从 100g 到 150g，餐别改为 Snack
-        let updated = storage.update_intake(
-            user_id,
-            &intake.id,
-            150.0,
-            Some(MealType::Snack),
-        ).unwrap();
+        let updated = storage
+            .update_intake(user_id, &intake.id, 150.0, Some(MealType::Snack))
+            .unwrap();
         assert!(updated);
 
         let summary = storage.get_daily_summary(user_id, "2026-09-15").unwrap();
@@ -2655,7 +2696,9 @@ mod tests {
         assert_eq!(storage.get_daily_summary(user_id, "2026-09-15").unwrap().items_count, 0);
 
         // 4. 测试 log_weight -> delete_weight_log
-        let weight_id = storage.log_weight(user_id, 69.5, Some(15.0), "2026-09-15T07:00:00", None).unwrap();
+        let weight_id = storage
+            .log_weight(user_id, 69.5, Some(15.0), "2026-09-15T07:00:00", None)
+            .unwrap();
         assert_eq!(storage.list_all_weights(user_id).unwrap().len(), 1);
         let weight_deleted = storage.delete_weight_log(user_id, &weight_id).unwrap();
         assert!(weight_deleted);
@@ -2677,7 +2720,9 @@ mod tests {
 
         // 7. 测试 delete_all_user_data 级联清空整个用户的所有关联数据
         // 重新灌入一些数据
-        storage.log_weight(user_id, 70.0, None, "2026-09-15T07:00:00", None).unwrap();
+        storage
+            .log_weight(user_id, 70.0, None, "2026-09-15T07:00:00", None)
+            .unwrap();
         storage.log_water(user_id, 500, "2026-09-15T09:00:00").unwrap();
         let user_deleted = storage.delete_all_user_data(user_id).unwrap();
         assert!(user_deleted);
@@ -2689,4 +2734,3 @@ mod tests {
         assert_eq!(storage.list_all_waters(user_id).unwrap().len(), 0);
     }
 }
-

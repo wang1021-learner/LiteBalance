@@ -21,36 +21,28 @@ pub mod water;
 pub mod workout_compensation;
 
 pub use activity::{
-    find_activity_by_code, get_standard_activity_catalog, ActivityCatalogItem, ActivityCategory,
-    ActivityEnergyCalculator, DailyEnergyBalance,
+    ActivityCatalogItem, ActivityCategory, ActivityEnergyCalculator, DailyEnergyBalance, find_activity_by_code,
+    get_standard_activity_catalog,
 };
 pub use analytics_reporting::{
-    DailyIntakeData, DailyWeightData, EnergyAnalytics, FastingSessionData, HabitAnalytics,
-    MacroAnalytics, PeriodicAnalyticsEngine, PeriodicReport,
+    DailyIntakeData, DailyWeightData, EnergyAnalytics, FastingSessionData, HabitAnalytics, MacroAnalytics,
+    PeriodicAnalyticsEngine, PeriodicReport,
 };
-pub use custom_food::{
-    CustomFoodDraft, CustomFoodEngine, InputBasis, NormalizedCustomFood,
-};
+pub use custom_food::{CustomFoodDraft, CustomFoodEngine, InputBasis, NormalizedCustomFood};
 pub use day_boundary::{DayBoundaryConfig, DayBoundaryEngine};
 pub use dynamic_weight::{DynamicSimulationResult, DynamicWeightPlanner, TrajectoryDay};
 pub use energy::{EnergyCalc, EnergyComparison, EnergyStandard};
 pub use fasting::{CyclePhase, FastingProtocol, FastingSession, FastingState};
 pub use goal_profile::{AdaptiveBudgetResult, GoalConfig, GoalKind, GoalProfileEngine};
-pub use macro_engine::{
-    CarbCyclingDayType, CarbCyclingSchedule, DietProtocol, MacroEngine, MacroTarget,
-};
-pub use micronutrient_eval::{
-    DailyDriReport, DriStandard, DriStatus, MicronutrientEvaluator, NutrientAssessment,
-};
+pub use macro_engine::{CarbCyclingDayType, CarbCyclingSchedule, DietProtocol, MacroEngine, MacroTarget};
+pub use micronutrient_eval::{DailyDriReport, DriStandard, DriStatus, MicronutrientEvaluator, NutrientAssessment};
 pub use recipe::{
-    compute_recipe_nutrition, MicroDisplayStatus, MicroValue, RecipeComputationResult,
-    RecipeDensityConverter, RecipeIngredientInput, RecipeMicroCoverage,
+    MicroDisplayStatus, MicroValue, RecipeComputationResult, RecipeDensityConverter, RecipeIngredientInput,
+    RecipeMicroCoverage, compute_recipe_nutrition,
 };
-pub use trends::{streak_stats, weight_projection, NutritionMovingAverage, StreakStats, WeightProjection};
+pub use trends::{NutritionMovingAverage, StreakStats, WeightProjection, streak_stats, weight_projection};
 pub use unit_system::{UnitConverter, UnitSystem};
 pub use water::{DailyWaterSummary, WaterCalc};
 pub use workout_compensation::{
-    CompensationMode, ExerciseModality, NutritionState, WorkoutCompensationCalc,
-    WorkoutCompensationResult,
+    CompensationMode, ExerciseModality, NutritionState, WorkoutCompensationCalc, WorkoutCompensationResult,
 };
-

@@ -11,16 +11,9 @@ pub struct StreakStats {
 }
 
 /// 计算当前与历史最长连续达标天数。
-pub fn streak_stats(
-    on_track_days: &HashSet<NaiveDate>,
-    window_start: NaiveDate,
-    today: NaiveDate,
-) -> StreakStats {
+pub fn streak_stats(on_track_days: &HashSet<NaiveDate>, window_start: NaiveDate, today: NaiveDate) -> StreakStats {
     if today < window_start {
-        return StreakStats {
-            current: 0,
-            longest: 0,
-        };
+        return StreakStats { current: 0, longest: 0 };
     }
 
     let total_days = (today - window_start).num_days();
@@ -65,10 +58,7 @@ pub struct WeightProjection {
 
 /// 对 `(日期, 体重kg)` 样本数据点执行一元线性最小二乘法回归拟合。
 /// 若有效数据点少于 2 个，则返回 `None`。
-pub fn weight_projection(
-    points: &[(NaiveDate, f64)],
-    target_kg: Option<f64>,
-) -> Option<WeightProjection> {
+pub fn weight_projection(points: &[(NaiveDate, f64)], target_kg: Option<f64>) -> Option<WeightProjection> {
     if points.len() < 2 {
         return None;
     }
@@ -160,9 +150,7 @@ impl NutritionMovingAverage {
         let avg_daily_fat_g = (sum_f / n * 10.0).round() / 10.0;
 
         // 阿特沃特系数（Atwater factors）：蛋白质 4 kcal/g, 碳水 4 kcal/g, 脂肪 9 kcal/g
-        let total_macro_kcal = (avg_daily_protein_g * 4.0)
-            + (avg_daily_carbs_g * 4.0)
-            + (avg_daily_fat_g * 9.0);
+        let total_macro_kcal = (avg_daily_protein_g * 4.0) + (avg_daily_carbs_g * 4.0) + (avg_daily_fat_g * 9.0);
 
         let (protein_kcal_pct, carbs_kcal_pct, fat_kcal_pct) = if total_macro_kcal > 0.0 {
             (

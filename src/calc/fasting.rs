@@ -59,15 +59,9 @@ impl FastingProtocol {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CyclePhase {
     /// 当前处于断食窗口期中。
-    Fasting {
-        remaining_minutes: i64,
-        progress_pct: f64,
-    },
+    Fasting { remaining_minutes: i64, progress_pct: f64 },
     /// 当前处于规定进食窗口期中。
-    Eating {
-        remaining_minutes: i64,
-        progress_pct: f64,
-    },
+    Eating { remaining_minutes: i64, progress_pct: f64 },
 }
 
 /// 间歇性断食会话的实时动态状态。
@@ -93,9 +87,7 @@ pub enum FastingState {
         reached_target: bool,
     },
     /// 断食中途被取消或中断。
-    Cancelled {
-        duration_minutes: i64,
-    },
+    Cancelled { duration_minutes: i64 },
 }
 
 /// 间歇性断食会话领域实体。
@@ -233,7 +225,12 @@ mod tests {
         let halfway = start + Duration::hours(8);
         let state = session.state_at(halfway);
         match state {
-            FastingState::Fasting { elapsed_minutes, target_minutes, remaining_minutes, progress_pct } => {
+            FastingState::Fasting {
+                elapsed_minutes,
+                target_minutes,
+                remaining_minutes,
+                progress_pct,
+            } => {
                 assert_eq!(elapsed_minutes, 480);
                 assert_eq!(target_minutes, 960);
                 assert_eq!(remaining_minutes, 480);
@@ -246,7 +243,12 @@ mod tests {
         let overtime_time = start + Duration::hours(17);
         let state_overtime = session.state_at(overtime_time);
         match state_overtime {
-            FastingState::Overtime { elapsed_minutes, target_minutes, overtime_minutes, .. } => {
+            FastingState::Overtime {
+                elapsed_minutes,
+                target_minutes,
+                overtime_minutes,
+                ..
+            } => {
                 assert_eq!(elapsed_minutes, 1020);
                 assert_eq!(target_minutes, 960);
                 assert_eq!(overtime_minutes, 60);
@@ -314,7 +316,10 @@ mod tests {
 
         let state = session.state_at(end_time + Duration::hours(1));
         match state {
-            FastingState::Completed { total_duration_minutes, reached_target } => {
+            FastingState::Completed {
+                total_duration_minutes,
+                reached_target,
+            } => {
                 assert_eq!(total_duration_minutes, 960);
                 assert!(reached_target);
             }

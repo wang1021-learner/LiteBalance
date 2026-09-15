@@ -9,9 +9,9 @@
 //! 3. 实体生成与本地库绑定：
 //!    构造标准的 `FoodRecord` 与 `Nutriments100g`，便于持久化至 SQLite `foods` 与 FTS5 全文索引。
 
+use crate::storage::models::{FoodRecord, FoodSource, Nutriments100g};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::storage::models::{FoodRecord, FoodSource, Nutriments100g};
 
 /// 录入基准基数类型
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -128,17 +128,18 @@ impl CustomFoodEngine {
         let food = FoodRecord {
             id: food_id,
             name: name.to_string(),
-            brand: draft.brand.clone().map(|b| b.trim().to_string()).filter(|b| !b.is_empty()),
+            brand: draft
+                .brand
+                .clone()
+                .map(|b| b.trim().to_string())
+                .filter(|b| !b.is_empty()),
             source: FoodSource::Custom,
             serving_quantity,
             serving_unit,
             image_url: None,
         };
 
-        Ok(NormalizedCustomFood {
-            food,
-            nutriments_100g,
-        })
+        Ok(NormalizedCustomFood { food, nutriments_100g })
     }
 }
 

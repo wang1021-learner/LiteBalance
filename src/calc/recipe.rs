@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::storage::models::Nutriments100g;
+use serde::{Deserialize, Serialize};
 
 /// 带有液体密度支持的食谱原料换算工具。
 pub struct RecipeDensityConverter;
@@ -49,11 +49,7 @@ impl RecipeDensityConverter {
             "fl oz" | "fl.oz" | "floz" => Some(amount * 29.5735295625 * density),
             "serving" => {
                 let sq = serving_quantity_g?;
-                if sq > 0.0 {
-                    Some(amount * sq)
-                } else {
-                    None
-                }
+                if sq > 0.0 { Some(amount * sq) } else { None }
             }
             _ => None,
         }
@@ -82,10 +78,7 @@ pub enum MicroValue {
     Unknown,
     /// 仅部分原料拥有该微量元素的实验室数据。
     /// `value` 为已知原料内的营养素浓度，`coverage_pct` 为已知原料占总重量的质量百分比。
-    Partial {
-        value: f64,
-        coverage_pct: f64,
-    },
+    Partial { value: f64, coverage_pct: f64 },
     /// 食谱中 100% 的原料（按重量计）均具备确切的化验数据。
     Complete(f64),
 }
@@ -298,19 +291,24 @@ impl RecipeAccumulator {
 
         let n = &ing.nutriments;
         self.sugars.add(n.sugars_100, weight_g, get_cov("sugars"));
-        self.sat_fat.add(n.saturated_fat_100, weight_g, get_cov("saturated_fat"));
+        self.sat_fat
+            .add(n.saturated_fat_100, weight_g, get_cov("saturated_fat"));
         self.fiber.add(n.fiber_100, weight_g, get_cov("fiber"));
-        self.mono_fat.add(n.monounsaturated_fat_100, weight_g, get_cov("monounsaturated_fat"));
-        self.poly_fat.add(n.polyunsaturated_fat_100, weight_g, get_cov("polyunsaturated_fat"));
+        self.mono_fat
+            .add(n.monounsaturated_fat_100, weight_g, get_cov("monounsaturated_fat"));
+        self.poly_fat
+            .add(n.polyunsaturated_fat_100, weight_g, get_cov("polyunsaturated_fat"));
         self.trans_fat.add(n.trans_fat_100, weight_g, get_cov("trans_fat"));
-        self.cholesterol.add(n.cholesterol_mg_100, weight_g, get_cov("cholesterol"));
+        self.cholesterol
+            .add(n.cholesterol_mg_100, weight_g, get_cov("cholesterol"));
         self.sodium.add(n.sodium_mg_100, weight_g, get_cov("sodium"));
         self.potassium.add(n.potassium_mg_100, weight_g, get_cov("potassium"));
         self.magnesium.add(n.magnesium_mg_100, weight_g, get_cov("magnesium"));
         self.calcium.add(n.calcium_mg_100, weight_g, get_cov("calcium"));
         self.iron.add(n.iron_mg_100, weight_g, get_cov("iron"));
         self.zinc.add(n.zinc_mg_100, weight_g, get_cov("zinc"));
-        self.phosphorus.add(n.phosphorus_mg_100, weight_g, get_cov("phosphorus"));
+        self.phosphorus
+            .add(n.phosphorus_mg_100, weight_g, get_cov("phosphorus"));
         self.vit_a.add(n.vitamin_a_ug_100, weight_g, get_cov("vitamin_a"));
         self.vit_c.add(n.vitamin_c_mg_100, weight_g, get_cov("vitamin_c"));
         self.vit_d.add(n.vitamin_d_ug_100, weight_g, get_cov("vitamin_d"));
@@ -336,21 +334,17 @@ pub fn compute_recipe_nutrition(
     let mut accumulator = RecipeAccumulator::default();
 
     for (i, ing) in ingredients.iter().enumerate() {
-        let weight_g = UnitConverter::to_grams_with_density(
-            ing.amount,
-            &ing.unit,
-            ing.serving_quantity_g,
-            ing.density_g_per_ml,
-        )
-        .ok_or_else(|| {
-            format!(
-                "无法换算第 {} 种原料 ('{}') 的数量 {} (单位 '{}')",
-                i + 1,
-                ing.name,
-                ing.amount,
-                ing.unit
-            )
-        })?;
+        let weight_g =
+            UnitConverter::to_grams_with_density(ing.amount, &ing.unit, ing.serving_quantity_g, ing.density_g_per_ml)
+                .ok_or_else(|| {
+                format!(
+                    "无法换算第 {} 种原料 ('{}') 的数量 {} (单位 '{}')",
+                    i + 1,
+                    ing.name,
+                    ing.amount,
+                    ing.unit
+                )
+            })?;
 
         ingredient_weights_g.push(weight_g);
         natural_total_weight += weight_g;
@@ -458,13 +452,9 @@ mod tests {
     #[test]
     fn test_density_conversion_olive_oil() {
         // 10ml 橄榄油（密度 0.918 g/ml）= 9.18g
-        let grams = UnitConverter::to_grams_with_density(
-            10.0,
-            "ml",
-            None,
-            Some(UnitConverter::OLIVE_OIL_DENSITY_G_PER_ML),
-        )
-        .unwrap();
+        let grams =
+            UnitConverter::to_grams_with_density(10.0, "ml", None, Some(UnitConverter::OLIVE_OIL_DENSITY_G_PER_ML))
+                .unwrap();
         assert!((grams - 9.18).abs() < 1e-4);
 
         // 未指定密度时，默认回退为水密度 (10.0g)
@@ -527,7 +517,10 @@ mod tests {
 
         // 维生素 D：所有原料均完全未测 -> 必须为 Unknown
         assert_eq!(res.micro_coverage.vitamin_d, MicroValue::Unknown);
-        assert_eq!(res.micro_coverage.vitamin_d.display_status(50.0), MicroDisplayStatus::Hidden);
+        assert_eq!(
+            res.micro_coverage.vitamin_d.display_status(50.0),
+            MicroDisplayStatus::Hidden
+        );
     }
 
     #[test]

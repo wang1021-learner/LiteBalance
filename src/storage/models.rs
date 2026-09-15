@@ -313,4 +313,3 @@ pub struct UserGoalRecord {
     pub created_at: String,
     pub updated_at: String,
 }
-

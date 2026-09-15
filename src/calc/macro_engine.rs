@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::models::UserProfile;
+use serde::{Deserialize, Serialize};
 
 /// 饮食流派哲学 / 三大宏量营养素分配方案。
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -29,7 +29,11 @@ pub enum DietProtocol {
     LowCarbHighFat,
 
     /// 自定义宏量百分比分配：(碳水比例, 脂肪比例, 蛋白质比例)，总和为 1.0（如 0.50, 0.25, 0.25）。
-    CustomPercentage { carbs_pct: f64, fat_pct: f64, protein_pct: f64 },
+    CustomPercentage {
+        carbs_pct: f64,
+        fat_pct: f64,
+        protein_pct: f64,
+    },
 }
 
 /// 碳水循环（Carb-Cycling）日程周期。
@@ -115,11 +119,7 @@ impl MacroEngine {
     ) -> MacroTarget {
         let bw = user.weight_kg;
         let bf = body_fat_pct.unwrap_or_else(|| {
-            crate::calc::dynamic_weight::DynamicWeightPlanner::estimate_body_fat_pct(
-                user.bmi(),
-                user.age,
-                user.gender,
-            )
+            crate::calc::dynamic_weight::DynamicWeightPlanner::estimate_body_fat_pct(user.bmi(), user.age, user.gender)
         });
         let ffm = bw * (1.0 - (bf / 100.0)).max(0.1);
 
@@ -211,7 +211,11 @@ impl MacroEngine {
                 )
             }
 
-            DietProtocol::CustomPercentage { carbs_pct, fat_pct, protein_pct } => {
+            DietProtocol::CustomPercentage {
+                carbs_pct,
+                fat_pct,
+                protein_pct,
+            } => {
                 let sum = carbs_pct + fat_pct + protein_pct;
                 let (c_p, f_p, p_p) = if (sum - 1.0).abs() > 1e-4 {
                     (carbs_pct / sum, fat_pct / sum, protein_pct / sum)
@@ -223,12 +227,7 @@ impl MacroEngine {
                 let f_g = (total_kcal * f_p) / Self::KCAL_PER_G_FAT;
                 let c_g = (total_kcal * c_p) / Self::KCAL_PER_G_CARBS;
 
-                (
-                    p_g,
-                    f_g,
-                    c_g,
-                    "自定义宏量百分比：用户自定义配置的三大营养素热量占比。",
-                )
+                (p_g, f_g, c_g, "自定义宏量百分比：用户自定义配置的三大营养素热量占比。")
             }
         };
 
@@ -310,20 +309,10 @@ impl MacroEngine {
         );
 
         // Moderate carb target
-        let moderate_target = Self::calculate(
-            moderate_kcal,
-            user,
-            body_fat_pct,
-            DietProtocol::HighProteinBalanced,
-        );
+        let moderate_target = Self::calculate(moderate_kcal, user, body_fat_pct, DietProtocol::HighProteinBalanced);
 
         // Low carb target
-        let low_target = Self::calculate(
-            low_kcal,
-            user,
-            body_fat_pct,
-            DietProtocol::LowCarbHighFat,
-        );
+        let low_target = Self::calculate(low_kcal, user, body_fat_pct, DietProtocol::LowCarbHighFat);
 
         // Weekly balance: (2 * High + 3 * Moderate + 2 * Low) / 7
         let weekly_avg = (2.0 * high_kcal + 3.0 * moderate_kcal + 2.0 * low_kcal) / 7.0;
@@ -345,20 +334,9 @@ mod tests {
     #[test]
     fn test_high_protein_balanced_ffm_anchoring() {
         // 80 kg male, 20% body fat -> FFM = 64 kg
-        let user = UserProfile::new(
-            28,
-            178.0,
-            80.0,
-            Gender::Male,
-            ActivityLevel::Active,
-        ).unwrap();
+        let user = UserProfile::new(28, 178.0, 80.0, Gender::Male, ActivityLevel::Active).unwrap();
 
-        let target = MacroEngine::calculate(
-            2200.0,
-            &user,
-            Some(20.0),
-            DietProtocol::HighProteinBalanced,
-        );
+        let target = MacroEngine::calculate(2200.0, &user, Some(20.0), DietProtocol::HighProteinBalanced);
 
         println!("\nHigh Protein Balanced Target: {:?}", target);
         // Protein should be at least 2.2 * 64 = 140.8g (or 1.8 * 80 = 144g)
@@ -370,20 +348,9 @@ mod tests {
 
     #[test]
     fn test_ketogenic_protocol_low_carbs() {
-        let user = UserProfile::new(
-            35,
-            170.0,
-            75.0,
-            Gender::Female,
-            ActivityLevel::LowActive,
-        ).unwrap();
+        let user = UserProfile::new(35, 170.0, 75.0, Gender::Female, ActivityLevel::LowActive).unwrap();
 
-        let target = MacroEngine::calculate(
-            1800.0,
-            &user,
-            Some(25.0),
-            DietProtocol::Ketogenic,
-        );
+        let target = MacroEngine::calculate(1800.0, &user, Some(25.0), DietProtocol::Ketogenic);
 
         println!("Keto Target: {:?}", target);
         assert_eq!(target.carbs_g, 30.0);
@@ -394,13 +361,7 @@ mod tests {
 
     #[test]
     fn test_fat_warning_on_extreme_low_fat() {
-        let user = UserProfile::new(
-            25,
-            180.0,
-            85.0,
-            Gender::Male,
-            ActivityLevel::Active,
-        ).unwrap();
+        let user = UserProfile::new(25, 180.0, 85.0, Gender::Male, ActivityLevel::Active).unwrap();
 
         // 刻意设置极低脂（5%）分配
         let target = MacroEngine::calculate(
@@ -421,13 +382,7 @@ mod tests {
 
     #[test]
     fn test_carb_cycling_schedule() {
-        let user = UserProfile::new(
-            30,
-            175.0,
-            78.0,
-            Gender::Male,
-            ActivityLevel::Active,
-        ).unwrap();
+        let user = UserProfile::new(30, 175.0, 78.0, Gender::Male, ActivityLevel::Active).unwrap();
 
         let schedule = MacroEngine::generate_carb_cycling_schedule(2400.0, &user, Some(18.0));
         println!("Carb Cycling Schedule: {:?}", schedule);

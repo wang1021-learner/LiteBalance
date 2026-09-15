@@ -8,6 +8,6 @@ pub mod remote_food_client;
 
 pub use barcode::{BarcodeError, BarcodeType, BarcodeValidator, NormalizedBarcode};
 pub use remote_food_client::{
-    RemoteClientError, RemoteFoodClient, RemoteFoodProduct, SlidingWindowRateLimiter,
-    DEFAULT_USER_AGENT, OFF_API_BASE_URL,
+    DEFAULT_USER_AGENT, OFF_API_BASE_URL, RemoteClientError, RemoteFoodClient, RemoteFoodProduct,
+    SlidingWindowRateLimiter,
 };

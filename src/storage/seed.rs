@@ -1,6 +1,6 @@
+use crate::storage::StorageError;
 use crate::storage::db::StorageEngine;
 use crate::storage::models::{FoodRecord, FoodSource, Nutriments100g};
-use crate::storage::StorageError;
 
 /// 用于初始离线数据库填充的标准精选参考食品种子数据。
 struct SeedFood {
@@ -176,7 +176,6 @@ const DEFAULT_FOODS: &[SeedFood] = &[
         iron_mg: Some(1.5),
         vitamin_c_mg: None,
     },
-
     // --- 碳水化合物主食类 ---
     SeedFood {
         id: "seed_rolled_oats",
@@ -297,7 +296,6 @@ const DEFAULT_FOODS: &[SeedFood] = &[
         iron_mg: Some(0.3),
         vitamin_c_mg: Some(9.7),
     },
-
     // --- 健康优质脂肪类 ---
     SeedFood {
         id: "seed_extra_virgin_olive_oil",
@@ -367,7 +365,6 @@ const DEFAULT_FOODS: &[SeedFood] = &[
         iron_mg: Some(1.9),
         vitamin_c_mg: None,
     },
-
     // --- 新鲜蔬菜果蔬类 ---
     SeedFood {
         id: "seed_broccoli",

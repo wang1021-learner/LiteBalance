@@ -195,9 +195,21 @@ impl PeriodicAnalyticsEngine {
         let total_carbs: f64 = daily_intakes.iter().map(|d| d.carbs_g).sum();
         let total_fat: f64 = daily_intakes.iter().map(|d| d.fat_g).sum();
 
-        let avg_daily_protein_g = if logged_days > 0 { total_protein / logged_days as f64 } else { 0.0 };
-        let avg_daily_carbs_g = if logged_days > 0 { total_carbs / logged_days as f64 } else { 0.0 };
-        let avg_daily_fat_g = if logged_days > 0 { total_fat / logged_days as f64 } else { 0.0 };
+        let avg_daily_protein_g = if logged_days > 0 {
+            total_protein / logged_days as f64
+        } else {
+            0.0
+        };
+        let avg_daily_carbs_g = if logged_days > 0 {
+            total_carbs / logged_days as f64
+        } else {
+            0.0
+        };
+        let avg_daily_fat_g = if logged_days > 0 {
+            total_fat / logged_days as f64
+        } else {
+            0.0
+        };
 
         let total_macro_kcal = (total_protein * 4.0) + (total_carbs * 4.0) + (total_fat * 9.0);
         let (p_pct, c_pct, f_pct) = if total_macro_kcal > 0.0 {
@@ -256,10 +268,7 @@ impl PeriodicAnalyticsEngine {
             0.0
         };
 
-        let water_compliance_days = daily_water_logs
-            .iter()
-            .filter(|(_, w)| *w >= target_water_ml)
-            .count();
+        let water_compliance_days = daily_water_logs.iter().filter(|(_, w)| *w >= target_water_ml).count();
 
         let water_compliance_rate_pct = if !daily_water_logs.is_empty() {
             (water_compliance_days as f64 / daily_water_logs.len() as f64 * 100.0).min(100.0)
@@ -332,7 +341,10 @@ impl PeriodicAnalyticsEngine {
         if habits.fasting_sessions_count > 0 {
             insights.push(format!(
                 "间歇性断食执行情况：完成 {}/{} 次断食（依从率 {:.1}%），单次平均维持 {:.1} 小时。",
-                habits.fasting_completed_count, habits.fasting_sessions_count, habits.fasting_compliance_rate_pct, habits.avg_fasting_duration_hours
+                habits.fasting_completed_count,
+                habits.fasting_sessions_count,
+                habits.fasting_compliance_rate_pct,
+                habits.avg_fasting_duration_hours
             ));
         }
 
@@ -378,8 +390,14 @@ mod tests {
 
         // 体重记录：第 0 天为 80.0kg，第 13 天为 79.1kg（实际减重 -0.9kg）
         let weight_logs = vec![
-            DailyWeightData { day_offset: 0.0, weight_kg: 80.0 },
-            DailyWeightData { day_offset: 13.0, weight_kg: 79.1 },
+            DailyWeightData {
+                day_offset: 0.0,
+                weight_kg: 80.0,
+            },
+            DailyWeightData {
+                day_offset: 13.0,
+                weight_kg: 79.1,
+            },
         ];
 
         let report = PeriodicAnalyticsEngine::generate_report(
@@ -411,15 +429,13 @@ mod tests {
 
     #[test]
     fn test_macro_split_and_protein_compliance() {
-        let daily_intakes = vec![
-            DailyIntakeData {
-                date: "2026-05-01".into(),
-                intake_kcal: 2000.0,
-                protein_g: 150.0, // 600 kcal (30%)
-                carbs_g: 225.0,   // 900 kcal (45%)
-                fat_g: 55.5,      // 500 kcal (25%)
-            },
-        ];
+        let daily_intakes = vec![DailyIntakeData {
+            date: "2026-05-01".into(),
+            intake_kcal: 2000.0,
+            protein_g: 150.0, // 600 kcal (30%)
+            carbs_g: 225.0,   // 900 kcal (45%)
+            fat_g: 55.5,      // 500 kcal (25%)
+        }];
 
         let report = PeriodicAnalyticsEngine::generate_report(
             "2026-05-01",

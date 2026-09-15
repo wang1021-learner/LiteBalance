@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::models::{Gender, HormoneProfile, UserProfile};
+use serde::{Deserialize, Serialize};
 
 /// 体育运动/体能训练类型（运动模态）。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -122,7 +122,10 @@ impl WorkoutCompensationCalc {
         }
 
         let (multiplier, rationale) = match mode {
-            CompensationMode::PontzerTrexler2026 { modality, nutrition_state } => {
+            CompensationMode::PontzerTrexler2026 {
+                modality,
+                nutrition_state,
+            } => {
                 let m = Self::calculate_pontzer_trexler_2026(modality, nutrition_state);
                 let text = match (modality, nutrition_state) {
                     (ExerciseModality::ResistanceTraining, _) => {
@@ -154,7 +157,9 @@ impl WorkoutCompensationCalc {
                 1.00,
                 "Howard et al. 2025 (PNAS): 线性完全累加模型（100% 全额计入，适用于高水平耐力运动员）。",
             ),
-            CompensationMode::BehavioralFlanagan2024 { fatigue_compensation_level } => {
+            CompensationMode::BehavioralFlanagan2024 {
+                fatigue_compensation_level,
+            } => {
                 let level = fatigue_compensation_level.clamp(0.0, 1.0);
                 let m = 1.00 - (0.35 * level);
                 (
@@ -164,10 +169,7 @@ impl WorkoutCompensationCalc {
             }
             CompensationMode::Custom(custom_m) => {
                 let m = custom_m.clamp(0.10, 1.00);
-                (
-                    m,
-                    "用户自定义运动能量补偿折算系数。",
-                )
+                (m, "用户自定义运动能量补偿折算系数。")
             }
         };
 
@@ -193,13 +195,12 @@ impl WorkoutCompensationCalc {
     /// 3. 饮食能量限制（热量赤字减脂期）叠加运动训练会加剧身体的节能代偿。
     ///
     /// 以下参数点根据上述论文趋势精细拟定，反映各训练模态与营养状态下的经验代谢响应。
-    pub fn calculate_pontzer_trexler_2026(
-        modality: ExerciseModality,
-        nutrition_state: NutritionState,
-    ) -> f64 {
+    pub fn calculate_pontzer_trexler_2026(modality: ExerciseModality, nutrition_state: NutritionState) -> f64 {
         match (modality, nutrition_state) {
             // 抗阻力量训练：极低代偿（约 10-15% 代偿 -> 0.85-0.90 计入）
-            (ExerciseModality::ResistanceTraining, NutritionState::Maintenance | NutritionState::CaloricSurplus) => 0.90,
+            (ExerciseModality::ResistanceTraining, NutritionState::Maintenance | NutritionState::CaloricSurplus) => {
+                0.90
+            }
             (ExerciseModality::ResistanceTraining, NutritionState::CaloricDeficit) => 0.85,
 
             // 有氧耐力训练：高代偿（约 65-70% 代偿 -> 约 0.35 计入）
@@ -212,7 +213,9 @@ impl WorkoutCompensationCalc {
             (ExerciseModality::HybridHiit, NutritionState::CaloricDeficit) => 0.50,
 
             // 低强度日常活动/散步
-            (ExerciseModality::LowIntensityActive, NutritionState::Maintenance | NutritionState::CaloricSurplus) => 0.50,
+            (ExerciseModality::LowIntensityActive, NutritionState::Maintenance | NutritionState::CaloricSurplus) => {
+                0.50
+            }
             (ExerciseModality::LowIntensityActive, NutritionState::CaloricDeficit) => 0.40,
         }
     }
@@ -270,13 +273,7 @@ mod tests {
 
     #[test]
     fn test_pontzer_trexler_2026_resistance_vs_aerobic() {
-        let user = UserProfile::new(
-            30,
-            175.0,
-            75.0,
-            Gender::Male,
-            ActivityLevel::Active,
-        ).unwrap();
+        let user = UserProfile::new(30, 175.0, 75.0, Gender::Male, ActivityLevel::Active).unwrap();
 
         // 1. 抗阻力量训练（热量赤字期）：代偿极小（折算计入 0.85）
         let res_result = WorkoutCompensationCalc::calculate(
@@ -326,20 +323,10 @@ mod tests {
 
     #[test]
     fn test_careau_conservative_mode() {
-        let user = UserProfile::new(
-            30,
-            175.0,
-            75.0,
-            Gender::Male,
-            ActivityLevel::Active,
-        ).unwrap();
+        let user = UserProfile::new(30, 175.0, 75.0, Gender::Male, ActivityLevel::Active).unwrap();
 
-        let result = WorkoutCompensationCalc::calculate(
-            500.0,
-            &user,
-            Some(20.0),
-            CompensationMode::ConservativeCareau2021,
-        );
+        let result =
+            WorkoutCompensationCalc::calculate(500.0, &user, Some(20.0), CompensationMode::ConservativeCareau2021);
 
         assert!(result.credited_kcal < 500.0);
         assert!(result.credited_kcal > 340.0);
@@ -348,20 +335,9 @@ mod tests {
 
     #[test]
     fn test_additive_pnas_2025_mode() {
-        let user = UserProfile::new(
-            28,
-            180.0,
-            72.0,
-            Gender::Male,
-            ActivityLevel::VeryActive,
-        ).unwrap();
+        let user = UserProfile::new(28, 180.0, 72.0, Gender::Male, ActivityLevel::VeryActive).unwrap();
 
-        let result = WorkoutCompensationCalc::calculate(
-            800.0,
-            &user,
-            Some(12.0),
-            CompensationMode::AdditiveHoward2025,
-        );
+        let result = WorkoutCompensationCalc::calculate(800.0, &user, Some(12.0), CompensationMode::AdditiveHoward2025);
 
         assert_eq!(result.credited_kcal, 800.0);
         assert_eq!(result.compensated_kcal, 0.0);

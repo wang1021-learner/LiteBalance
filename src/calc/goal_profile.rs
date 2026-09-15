@@ -8,11 +8,11 @@
 //! 4. 临床级内分泌安全红线（Safety Floor）：强制男性 ≥1500 kcal，女性 ≥1200 kcal，
 //!    防止下丘脑-垂体-性腺轴与甲状腺内分泌损伤。
 
-use serde::{Deserialize, Serialize};
-use crate::models::{Gender, HormoneProfile, UserProfile};
 use crate::calc::energy::EnergyCalc;
 use crate::calc::macro_engine::{DietProtocol, MacroEngine};
+use crate::models::{Gender, HormoneProfile, UserProfile};
 use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
 
 /// 目标类型分类
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -263,12 +263,8 @@ impl GoalProfileEngine {
         };
 
         // 3. 目标平稳着陆（Tapering）
-        let taper_factor = Self::calculate_taper_factor(
-            user.weight_kg,
-            goal.target_weight_kg,
-            goal.kind,
-            goal.taper_enabled,
-        );
+        let taper_factor =
+            Self::calculate_taper_factor(user.weight_kg, goal.target_weight_kg, goal.kind, goal.taper_enabled);
         let tapered_adjustment_kcal = (raw_rate_adjustment_kcal * taper_factor).round();
         if goal.taper_enabled && taper_factor < 1.0 && goal.kind != GoalKind::MaintainWeight {
             clinical_notes.push(format!(
@@ -287,44 +283,42 @@ impl GoalProfileEngine {
             && goal.kind != GoalKind::MaintainWeight
             && let Some(actual_rate) = actual_ols_weekly_rate_kg
         {
-                let target_rate = if goal.kind == GoalKind::LoseWeight {
-                    -goal.weekly_rate_kg.abs()
-                } else {
-                    goal.weekly_rate_kg.abs()
-                };
+            let target_rate = if goal.kind == GoalKind::LoseWeight {
+                -goal.weekly_rate_kg.abs()
+            } else {
+                goal.weekly_rate_kg.abs()
+            };
 
-                // discrepancy = 实际速率 - 目标速率
-                // 例如减重目标 -0.5，实际 0.0 (平台期)，diff = +0.5 > 0
-                let discrepancy = actual_rate - target_rate;
-                rate_discrepancy_kg = Some(discrepancy);
+            // discrepancy = 实际速率 - 目标速率
+            // 例如减重目标 -0.5，实际 0.0 (平台期)，diff = +0.5 > 0
+            let discrepancy = actual_rate - target_rate;
+            rate_discrepancy_kg = Some(discrepancy);
 
-                // 修正量：实际偏高（减得慢）需加大缺口（负向调整）；实际偏低（暴瘦）需调高摄入（正向调整）
-                let raw_correction = -discrepancy * Self::KCAL_PER_KG_WEEK_DAILY * Self::ADAPTIVE_DAMPING_FACTOR;
-                // 钳制在 [-250, +250] kcal
-                adaptive_correction_kcal = raw_correction
-                    .clamp(-Self::MAX_ADAPTIVE_CORRECTION_KCAL, Self::MAX_ADAPTIVE_CORRECTION_KCAL)
-                    .round();
+            // 修正量：实际偏高（减得慢）需加大缺口（负向调整）；实际偏低（暴瘦）需调高摄入（正向调整）
+            let raw_correction = -discrepancy * Self::KCAL_PER_KG_WEEK_DAILY * Self::ADAPTIVE_DAMPING_FACTOR;
+            // 钳制在 [-250, +250] kcal
+            adaptive_correction_kcal = raw_correction
+                .clamp(-Self::MAX_ADAPTIVE_CORRECTION_KCAL, Self::MAX_ADAPTIVE_CORRECTION_KCAL)
+                .round();
 
-                if adaptive_correction_kcal.abs() >= 30.0 {
-                    if adaptive_correction_kcal < 0.0 {
-                        clinical_notes.push(format!(
+            if adaptive_correction_kcal.abs() >= 30.0 {
+                if adaptive_correction_kcal < 0.0 {
+                    clinical_notes.push(format!(
                             "自适应反馈：近期体重减速慢于预期（实测 {:.2} vs 目标 {:.2} kg/周），已自适应下调预算 {:.0} kcal 以突破代谢适应平台期。",
                             actual_rate, target_rate, adaptive_correction_kcal.abs()
                         ));
-                    } else {
-                        clinical_notes.push(format!(
+                } else {
+                    clinical_notes.push(format!(
                             "自适应反馈：近期体重下降过快（实测 {:.2} vs 目标 {:.2} kg/周），为防止瘦体重过度消耗，已保护性上调预算 +{:.0} kcal。",
                             actual_rate, target_rate, adaptive_correction_kcal
                         ));
-                    }
                 }
+            }
         }
 
         // 5. 汇总计算未受限预算
-        let unconstrained_budget_kcal = base_tdee_kcal
-            + tapered_adjustment_kcal
-            + adaptive_correction_kcal
-            + goal.manual_calorie_offset;
+        let unconstrained_budget_kcal =
+            base_tdee_kcal + tapered_adjustment_kcal + adaptive_correction_kcal + goal.manual_calorie_offset;
 
         // 6. 临床生理安全红线审查与钳制
         let safety_floor_kcal = Self::recommended_safety_floor(&user.gender);
@@ -339,12 +333,7 @@ impl GoalProfileEngine {
         };
 
         // 7. 宏量素推荐分配（采用高蛋白均衡临床协议）
-        let macro_plan = MacroEngine::calculate(
-            daily_budget_kcal,
-            user,
-            None,
-            DietProtocol::HighProteinBalanced,
-        );
+        let macro_plan = MacroEngine::calculate(daily_budget_kcal, user, None, DietProtocol::HighProteinBalanced);
 
         AdaptiveBudgetResult {
             base_tdee_kcal,
@@ -389,20 +378,41 @@ mod tests {
         // 目标 70kg，减重场景
         let kind = GoalKind::LoseWeight;
         // 距离 6kg (> 5kg) -> 1.0
-        assert_eq!(GoalProfileEngine::calculate_taper_factor(76.0, Some(70.0), kind, true), 1.0);
+        assert_eq!(
+            GoalProfileEngine::calculate_taper_factor(76.0, Some(70.0), kind, true),
+            1.0
+        );
         // 距离 3kg (中点) -> (3 - 1) / 4 = 0.5
-        assert_eq!(GoalProfileEngine::calculate_taper_factor(73.0, Some(70.0), kind, true), 0.5);
+        assert_eq!(
+            GoalProfileEngine::calculate_taper_factor(73.0, Some(70.0), kind, true),
+            0.5
+        );
         // 距离 1kg -> 0.0
-        assert_eq!(GoalProfileEngine::calculate_taper_factor(71.0, Some(70.0), kind, true), 0.0);
+        assert_eq!(
+            GoalProfileEngine::calculate_taper_factor(71.0, Some(70.0), kind, true),
+            0.0
+        );
         // 距离 0.5kg -> 0.0
-        assert_eq!(GoalProfileEngine::calculate_taper_factor(70.5, Some(70.0), kind, true), 0.0);
+        assert_eq!(
+            GoalProfileEngine::calculate_taper_factor(70.5, Some(70.0), kind, true),
+            0.0
+        );
         // 达到目标 70kg -> 0.0
-        assert_eq!(GoalProfileEngine::calculate_taper_factor(70.0, Some(70.0), kind, true), 0.0);
+        assert_eq!(
+            GoalProfileEngine::calculate_taper_factor(70.0, Some(70.0), kind, true),
+            0.0
+        );
         // 超额达成 69kg -> 0.0
-        assert_eq!(GoalProfileEngine::calculate_taper_factor(69.0, Some(70.0), kind, true), 0.0);
+        assert_eq!(
+            GoalProfileEngine::calculate_taper_factor(69.0, Some(70.0), kind, true),
+            0.0
+        );
 
         // 未启用 taper
-        assert_eq!(GoalProfileEngine::calculate_taper_factor(72.0, Some(70.0), kind, false), 1.0);
+        assert_eq!(
+            GoalProfileEngine::calculate_taper_factor(72.0, Some(70.0), kind, false),
+            1.0
+        );
     }
 
     #[test]

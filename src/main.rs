@@ -14,18 +14,17 @@ use std::env;
 use std::path::PathBuf;
 
 use litebalance_core::calc::{
-    find_activity_by_code, get_standard_activity_catalog, weight_projection, ActivityEnergyCalculator,
-    CustomFoodDraft, CustomFoodEngine, DailyEnergyBalance, DailyIntakeData, DailyWeightData,
-    DayBoundaryConfig, DietProtocol, DriStatus, DynamicWeightPlanner, EnergyCalc, ExerciseModality,
-    FastingProtocol, FastingSession, FastingState, GoalConfig, GoalKind, GoalProfileEngine,
-    InputBasis, MacroEngine, MicronutrientEvaluator, NutritionMovingAverage, NutritionState,
-    PeriodicAnalyticsEngine, UnitConverter, WaterCalc,
+    ActivityEnergyCalculator, CustomFoodDraft, CustomFoodEngine, DailyEnergyBalance, DailyIntakeData, DailyWeightData,
+    DayBoundaryConfig, DietProtocol, DriStatus, DynamicWeightPlanner, EnergyCalc, ExerciseModality, FastingProtocol,
+    FastingSession, FastingState, GoalConfig, GoalKind, GoalProfileEngine, InputBasis, MacroEngine,
+    MicronutrientEvaluator, NutritionMovingAverage, NutritionState, PeriodicAnalyticsEngine, UnitConverter, WaterCalc,
+    find_activity_by_code, get_standard_activity_catalog, weight_projection,
 };
 use litebalance_core::client::{BarcodeValidator, RemoteFoodClient};
 use litebalance_core::models::{ActivityLevel, Gender, UserProfile};
 use litebalance_core::storage::{
-    seed_default_foods_if_empty, ActivityLogRecord, CacheStorageEngine, ExportImportEngine, NutriTrackerBackup,
-    FoodRecord, FoodSource, MealType, StorageEngine, UserGoalRecord,
+    ActivityLogRecord, CacheStorageEngine, ExportImportEngine, FoodRecord, FoodSource, MealType, NutriTrackerBackup,
+    StorageEngine, UserGoalRecord, seed_default_foods_if_empty,
 };
 
 /// 获取轻衡本地数据目录（用户主目录下的 `.litebalance/`），并确保目录已创建。
@@ -80,11 +79,7 @@ fn open_cache_storage() -> CacheStorageEngine {
     match CacheStorageEngine::open(&path) {
         Ok(cache) => cache,
         Err(e) => {
-            eprintln!(
-                "错误: 无法打开外部网络食品缓存数据库 {}（{}）。",
-                path.display(),
-                e
-            );
+            eprintln!("错误: 无法打开外部网络食品缓存数据库 {}（{}）。", path.display(), e);
             std::process::exit(1);
         }
     }
@@ -92,17 +87,20 @@ fn open_cache_storage() -> CacheStorageEngine {
 
 /// 打印工作台欢迎横幅。
 fn print_banner() {
-    println!(r#"
+    println!(
+        r#"
 =============================================================================
   轻衡 (LiteBalance Core) 工作台 (临床级代谢动力学与高精度营养计算引擎)
   - 遵循标准: NASEM 2023 DRI | NIH Kevin Hall ODE | Pontzer-Trexler 2026
   - 本地离线优先 SQLite + FTS5 全文检索 | 纯原生 Rust 实现
-============================================================================="#);
+============================================================================="#
+    );
 }
 
 /// 打印命令行帮助使用说明。
 fn print_usage() {
-    println!(r#"
+    println!(
+        r#"
 用法: litebalance <COMMAND> [OPTIONS]
 
 核心指令列表 (COMMANDS):
@@ -149,7 +147,8 @@ fn print_usage() {
   litebalance export --format json --output backup.json
   litebalance import --file user_intake.json
   litebalance user list
-"#);
+"#
+    );
 }
 
 fn main() {
@@ -203,11 +202,17 @@ fn get_arg_val(args: &[String], flag: &str) -> Option<String> {
 /// 处理 `plan` 指令：执行临床代谢评估、动态体重仿真与宏量目标分配。
 fn handle_plan(args: &[String]) {
     let age: u8 = get_arg_val(args, "--age").and_then(|s| s.parse().ok()).unwrap_or(30);
-    let height: f64 = get_arg_val(args, "--height").and_then(|s| s.parse().ok()).unwrap_or(175.0);
-    let weight: f64 = get_arg_val(args, "--weight").and_then(|s| s.parse().ok()).unwrap_or(80.0);
+    let height: f64 = get_arg_val(args, "--height")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(175.0);
+    let weight: f64 = get_arg_val(args, "--weight")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(80.0);
     let gender_str = get_arg_val(args, "--gender").unwrap_or_else(|| "male".to_string());
     let act_str = get_arg_val(args, "--activity").unwrap_or_else(|| "active".to_string());
-    let target_weight: f64 = get_arg_val(args, "--target").and_then(|s| s.parse().ok()).unwrap_or(weight - 5.0);
+    let target_weight: f64 = get_arg_val(args, "--target")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(weight - 5.0);
     let weeks: u32 = get_arg_val(args, "--weeks").and_then(|s| s.parse().ok()).unwrap_or(12);
 
     let gender = match gender_str.to_lowercase().as_str() {
@@ -222,8 +227,7 @@ fn handle_plan(args: &[String]) {
         _ => ActivityLevel::Active,
     };
 
-    let profile = UserProfile::new(age, height, weight, gender, activity)
-        .expect("无效的用户生理档案参数");
+    let profile = UserProfile::new(age, height, weight, gender, activity).expect("无效的用户生理档案参数");
 
     println!("\n=======================================================");
     println!("  临床代谢评估与 NIH KEVIN HALL 动态体重规划");
@@ -242,7 +246,10 @@ fn handle_plan(args: &[String]) {
     // 1. 能量代谢计算（NASEM 2023 DRI 对比老版 IOM 2005）
     let comp = EnergyCalc::compare(&profile);
     println!("\n--- 1. 每日总能量消耗 (TDEE) 与基础代谢 ---");
-    println!("  * NASEM 2023 DRI:  {:.0} kcal/天 (基于 IAEA 双标水数据库更新回归模型)", comp.nasem_2023_kcal);
+    println!(
+        "  * NASEM 2023 DRI:  {:.0} kcal/天 (基于 IAEA 双标水数据库更新回归模型)",
+        comp.nasem_2023_kcal
+    );
     println!(
         "  * 老版 IOM 2005:   {:.0} kcal/天 (绝对偏差: {:+.0} kcal, 相对偏差: {:+.1}%)",
         comp.iom_2005_kcal, comp.difference_kcal, comp.difference_pct
@@ -251,12 +258,7 @@ fn handle_plan(args: &[String]) {
     // 2. NIH Kevin Hall 动态常微分方程规划器
     println!("\n--- 2. NIH Kevin Hall 动态常微分方程求解与体成分预测 ---");
     let days = weeks * 7;
-    let target_plan = DynamicWeightPlanner::solve_target_intake(
-        &profile,
-        None,
-        target_weight,
-        days as usize,
-    );
+    let target_plan = DynamicWeightPlanner::solve_target_intake(&profile, None, target_weight, days as usize);
 
     match &target_plan {
         Ok(daily_intake) => {
@@ -265,13 +267,7 @@ fn handle_plan(args: &[String]) {
                 daily_intake,
                 daily_intake - comp.nasem_2023_kcal
             );
-            let sim = DynamicWeightPlanner::simulate(
-                &profile,
-                None,
-                *daily_intake,
-                days as usize,
-                Some(target_weight),
-            );
+            let sim = DynamicWeightPlanner::simulate(&profile, None, *daily_intake, days as usize, Some(target_weight));
             println!(
                 "  * 预测周期末体重: {:.2} kg (总变化量: {:+.2} kg)",
                 sim.final_weight_kg, sim.total_weight_change_kg
@@ -297,12 +293,7 @@ fn handle_plan(args: &[String]) {
     // 3. 宏量营养素目标分配
     let intake_for_macros = target_plan.unwrap_or(comp.nasem_2023_kcal - 500.0);
 
-    let macros = MacroEngine::calculate(
-        intake_for_macros,
-        &profile,
-        None,
-        DietProtocol::HighProteinBalanced,
-    );
+    let macros = MacroEngine::calculate(intake_for_macros, &profile, None, DietProtocol::HighProteinBalanced);
 
     println!("\n--- 3. 宏量营养素目标分配 (高蛋白均衡协议) ---");
     println!(
@@ -340,7 +331,10 @@ fn handle_search(args: &[String]) {
     let results = storage.search_foods_fts(&query, 20).unwrap_or_default();
 
     println!("\n检索关键词: '{}' (共命中 {} 条食物)", query, results.len());
-    println!("{:<26} {:<38} {:<10} {:<10}", "食物 ID", "食品名称", "标准份量", "热量 (kcal/100g)");
+    println!(
+        "{:<26} {:<38} {:<10} {:<10}",
+        "食物 ID", "食品名称", "标准份量", "热量 (kcal/100g)"
+    );
     println!("{:-<88}", "");
 
     for food in results {
@@ -393,7 +387,10 @@ fn handle_log_food(args: &[String]) {
         });
 
         match storage.update_intake(user_id, &update_id, amount, meal_type) {
-            Ok(true) => println!("\n已成功更新摄入记录 ID: {}，新份量: {:.1}g，营养快照已自动重算！\n", update_id, amount),
+            Ok(true) => println!(
+                "\n已成功更新摄入记录 ID: {}，新份量: {:.1}g，营养快照已自动重算！\n",
+                update_id, amount
+            ),
             Ok(false) => eprintln!("\n未找到指定 ID 的摄入打卡记录: {}\n", update_id),
             Err(e) => eprintln!("\n更新摄入记录失败: {}\n", e),
         }
@@ -404,7 +401,8 @@ fn handle_log_food(args: &[String]) {
     let food_id = match get_arg_val(args, "--id") {
         Some(id) => id,
         None => {
-            println!(r#"
+            println!(
+                r#"
 用法: litebalance log-food [OPTIONS]
 
 选项:
@@ -414,11 +412,14 @@ fn handle_log_food(args: &[String]) {
   --meal <MEAL>            餐别: breakfast | lunch | dinner | snack (默认: lunch)
   --update <INTAKE_ID>     更新指定摄入记录的克数或餐别 (配合 --amount, 可选 --meal)
   --delete <INTAKE_ID>     删除指定的食物摄入记录
-"#);
+"#
+            );
             return;
         }
     };
-    let amount: f64 = get_arg_val(args, "--amount").and_then(|s| s.parse().ok()).unwrap_or(100.0);
+    let amount: f64 = get_arg_val(args, "--amount")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(100.0);
     let unit = get_arg_val(args, "--unit").unwrap_or_else(|| "g".to_string());
     let meal_str = get_arg_val(args, "--meal").unwrap_or_else(|| "lunch".to_string());
 
@@ -449,8 +450,7 @@ fn handle_log_food(args: &[String]) {
 
 /// 处理 `summary` 指令：查看今日或指定日期的摄入营养素及三大宏量占比（支持 --boundary 生理日界线）。
 fn handle_summary(args: &[String]) {
-    let date_str = get_arg_val(args, "--date")
-        .unwrap_or_else(|| chrono::Utc::now().format("%Y-%m-%d").to_string());
+    let date_str = get_arg_val(args, "--date").unwrap_or_else(|| chrono::Utc::now().format("%Y-%m-%d").to_string());
     let boundary_offset = get_arg_val(args, "--boundary")
         .map(|b| DayBoundaryConfig::from_str_loose(&b).offset_total_minutes)
         .unwrap_or(0);
@@ -472,13 +472,24 @@ fn handle_summary(args: &[String]) {
     println!("打卡记录项数:     {} 项", summary.items_count);
     println!("实际摄入总能量:   {:.0} kcal", summary.total_energy_kcal);
     println!("三大宏量营养素摄入:");
-    println!("  * 蛋白质:       {:.1} g ({:.0} kcal)", summary.total_protein_g, summary.total_protein_g * 4.0);
-    println!("  * 碳水化合物:   {:.1} g ({:.0} kcal)", summary.total_carbs_g, summary.total_carbs_g * 4.0);
-    println!("  * 脂肪:         {:.1} g ({:.0} kcal)", summary.total_fat_g, summary.total_fat_g * 9.0);
+    println!(
+        "  * 蛋白质:       {:.1} g ({:.0} kcal)",
+        summary.total_protein_g,
+        summary.total_protein_g * 4.0
+    );
+    println!(
+        "  * 碳水化合物:   {:.1} g ({:.0} kcal)",
+        summary.total_carbs_g,
+        summary.total_carbs_g * 4.0
+    );
+    println!(
+        "  * 脂肪:         {:.1} g ({:.0} kcal)",
+        summary.total_fat_g,
+        summary.total_fat_g * 9.0
+    );
 
-    let total_macro_kcal = (summary.total_protein_g * 4.0)
-        + (summary.total_carbs_g * 4.0)
-        + (summary.total_fat_g * 9.0);
+    let total_macro_kcal =
+        (summary.total_protein_g * 4.0) + (summary.total_carbs_g * 4.0) + (summary.total_fat_g * 9.0);
     if total_macro_kcal > 0.0 {
         println!("宏量供能比 (Macro Ratio):");
         println!(
@@ -620,8 +631,15 @@ fn handle_fast(args: &[String]) {
                 (elapsed_mins as f64 / target_mins as f64 * 100.0).min(100.0)
             );
             match state {
-                FastingState::Fasting { remaining_minutes, progress_pct, .. } => {
-                    println!("当前状态:  断食进行中 (已完成 {:.1}%, 剩余 {} 分钟)", progress_pct, remaining_minutes);
+                FastingState::Fasting {
+                    remaining_minutes,
+                    progress_pct,
+                    ..
+                } => {
+                    println!(
+                        "当前状态:  断食进行中 (已完成 {:.1}%, 剩余 {} 分钟)",
+                        progress_pct, remaining_minutes
+                    );
                 }
                 FastingState::Overtime { overtime_minutes, .. } => {
                     println!("当前状态:  [目标已达成] 已超时断食 {} 分钟", overtime_minutes);
@@ -663,9 +681,18 @@ fn handle_trends(_args: &[String]) {
     if let Some(ma) = NutritionMovingAverage::compute(&intake_history) {
         println!("\n过去 30 天营养摄入移动均值 (基于 {} 天记录数据):", ma.days_count);
         println!("  * 平均每日热量: {:.0} kcal / 天", ma.avg_daily_calories);
-        println!("  * 平均蛋白质:   {:.1} g (供能比 {:.1}%)", ma.avg_daily_protein_g, ma.protein_kcal_pct);
-        println!("  * 平均碳水:     {:.1} g (供能比 {:.1}%)", ma.avg_daily_carbs_g, ma.carbs_kcal_pct);
-        println!("  * 平均脂肪:     {:.1} g (供能比 {:.1}%)", ma.avg_daily_fat_g, ma.fat_kcal_pct);
+        println!(
+            "  * 平均蛋白质:   {:.1} g (供能比 {:.1}%)",
+            ma.avg_daily_protein_g, ma.protein_kcal_pct
+        );
+        println!(
+            "  * 平均碳水:     {:.1} g (供能比 {:.1}%)",
+            ma.avg_daily_carbs_g, ma.carbs_kcal_pct
+        );
+        println!(
+            "  * 平均脂肪:     {:.1} g (供能比 {:.1}%)",
+            ma.avg_daily_fat_g, ma.fat_kcal_pct
+        );
     } else {
         println!("摄入趋势分析: 未检索到有效历史饮食打卡记录。");
     }
@@ -704,13 +731,15 @@ fn handle_log_weight(args: &[String]) {
         .and_then(|s| s.parse().ok())
         .expect("缺少必填参数 --kg <weight>。示例: litebalance log-weight --kg 79.5");
     let body_fat: Option<f64> = get_arg_val(args, "--fat").and_then(|s| s.parse().ok());
-    let date_str = get_arg_val(args, "--date")
-        .unwrap_or_else(|| chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string());
+    let date_str =
+        get_arg_val(args, "--date").unwrap_or_else(|| chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string());
 
     let dummy_profile = UserProfile::new(30, 175.0, weight_kg, Gender::Male, ActivityLevel::Active).unwrap();
     let _ = storage.insert_user(user_id, "User", "1994-01-01", &dummy_profile);
 
-    let log_id = storage.log_weight(user_id, weight_kg, body_fat, &date_str, None).expect("记录体重失败");
+    let log_id = storage
+        .log_weight(user_id, weight_kg, body_fat, &date_str, None)
+        .expect("记录体重失败");
     println!(
         "\n成功记录体重: {:.1} kg (体脂率: {:?})，记录时间: {}",
         weight_kg, body_fat, date_str
@@ -730,10 +759,16 @@ fn handle_recipe(_args: &[String]) {
     if recipes.is_empty() {
         println!("本地数据库中暂无自建食谱。");
     } else {
-        println!("{:<24} {:<32} {:<10} {:<12}", "食谱 ID", "食谱名称", "份数", "总重量 (g)");
+        println!(
+            "{:<24} {:<32} {:<10} {:<12}",
+            "食谱 ID", "食谱名称", "份数", "总重量 (g)"
+        );
         println!("{:-<80}", "");
         for r in recipes {
-            println!("{:<24} {:<32} {:<10.1} {:.0} g", r.id, r.name, r.servings, r.total_weight_g);
+            println!(
+                "{:<24} {:<32} {:<10.1} {:.0} g",
+                r.id, r.name, r.servings, r.total_weight_g
+            );
         }
     }
     println!();
@@ -763,7 +798,10 @@ fn handle_dri(args: &[String]) {
     println!("已记录食物摄入总净重: {:.1} g", report.total_food_mass_g);
     println!("整体微量营养充足度评分: {:.1}%\n", report.adequacy_score);
 
-    println!("{:<24} {:<10} {:<12} {:<10} {:<12} {:<16}", "营养素", "摄入量", "目标值", "标准类型", "数据覆盖率", "临床判定状态");
+    println!(
+        "{:<24} {:<10} {:<12} {:<10} {:<12} {:<16}",
+        "营养素", "摄入量", "目标值", "标准类型", "数据覆盖率", "临床判定状态"
+    );
     println!("{:-<92}", "");
 
     for a in &report.assessments {
@@ -780,12 +818,7 @@ fn handle_dri(args: &[String]) {
         };
         println!(
             "{:<24} {:<10.1} {:<12.1} {:<10} {:<12.0}% {:<16}",
-            a.nutrient_name,
-            a.intake_amount,
-            a.target_value,
-            std_str,
-            a.data_coverage_pct,
-            status_str
+            a.nutrient_name, a.intake_amount, a.target_value, std_str, a.data_coverage_pct, status_str
         );
     }
 
@@ -803,13 +836,23 @@ fn handle_report(args: &[String]) {
     let storage = open_app_storage();
     let user_id = "default_user";
     let days: usize = get_arg_val(args, "--days").and_then(|s| s.parse().ok()).unwrap_or(7);
-    let tdee: f64 = get_arg_val(args, "--tdee").and_then(|s| s.parse().ok()).unwrap_or(2400.0);
-    let target_kcal: f64 = get_arg_val(args, "--target").and_then(|s| s.parse().ok()).unwrap_or(1900.0);
-    let target_protein: f64 = get_arg_val(args, "--protein").and_then(|s| s.parse().ok()).unwrap_or(150.0);
-    let target_water: u32 = get_arg_val(args, "--water").and_then(|s| s.parse().ok()).unwrap_or(2500);
+    let tdee: f64 = get_arg_val(args, "--tdee")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(2400.0);
+    let target_kcal: f64 = get_arg_val(args, "--target")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1900.0);
+    let target_protein: f64 = get_arg_val(args, "--protein")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(150.0);
+    let target_water: u32 = get_arg_val(args, "--water")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(2500);
 
     let end_date = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    let start_date = (chrono::Utc::now() - chrono::Duration::days(days as i64 - 1)).format("%Y-%m-%d").to_string();
+    let start_date = (chrono::Utc::now() - chrono::Duration::days(days as i64 - 1))
+        .format("%Y-%m-%d")
+        .to_string();
 
     let intakes_raw = storage.get_daily_intakes_history(user_id, days).unwrap_or_default();
     let mut daily_intakes = Vec::new();
@@ -861,8 +904,14 @@ fn handle_report(args: &[String]) {
         "   平均每日摄入:               {:.0} kcal (目标: {:.0} kcal, TDEE: {:.0} kcal)",
         report.energy.avg_daily_intake_kcal, report.energy.avg_daily_target_kcal, report.energy.avg_daily_tdee_kcal
     );
-    println!("   累计热量缺口:               {:+.0} kcal", report.energy.cumulative_caloric_deficit);
-    println!("   理论预计体重变化:           {:+.2} kg", report.energy.theoretical_weight_change_kg);
+    println!(
+        "   累计热量缺口:               {:+.0} kcal",
+        report.energy.cumulative_caloric_deficit
+    );
+    println!(
+        "   理论预计体重变化:           {:+.2} kg",
+        report.energy.theoretical_weight_change_kg
+    );
     if let Some(actual) = report.energy.actual_weight_change_kg {
         println!("   秤端实际体重变化:           {:+.2} kg", actual);
         if let Some(div) = report.energy.metabolic_divergence_kg {
@@ -906,15 +955,13 @@ fn handle_export(args: &[String]) {
 
     match format.to_lowercase().as_str() {
         "csv" => {
-            let csv_str = ExportImportEngine::export_intakes_csv(&storage, user_id)
-                .expect("导出饮食日志为 CSV 失败");
+            let csv_str = ExportImportEngine::export_intakes_csv(&storage, user_id).expect("导出饮食日志为 CSV 失败");
             let file_path = output.unwrap_or_else(|| "user_intake.csv".into());
             std::fs::write(&file_path, csv_str).expect("写入 CSV 文件失败");
             println!("\n已成功导出饮食日志至 CSV: {}", file_path);
         }
         _ => {
-            let backup = ExportImportEngine::export_native_backup(&storage, user_id)
-                .expect("生成原生备份失败");
+            let backup = ExportImportEngine::export_native_backup(&storage, user_id).expect("生成原生备份失败");
             let json_str = serde_json::to_string_pretty(&backup).expect("序列化备份数据失败");
             let file_path = output.unwrap_or_else(|| "litebalance_backup.json".into());
             std::fs::write(&file_path, json_str).expect("写入 JSON 备份文件失败");
@@ -949,7 +996,10 @@ fn handle_import(args: &[String]) {
     let backup: NutriTrackerBackup = match serde_json::from_str(&content) {
         Ok(backup) => backup,
         Err(e) => {
-            eprintln!("错误: 解析原生备份失败（{}）。请确认文件为 litebalance export 生成的 JSON 备份。", e);
+            eprintln!(
+                "错误: 解析原生备份失败（{}）。请确认文件为 litebalance export 生成的 JSON 备份。",
+                e
+            );
             std::process::exit(1);
         }
     };
@@ -1061,22 +1111,31 @@ fn handle_barcode(args: &[String]) {
             println!(
                 "  * 脂肪:         {:.1} g (饱和脂肪: {})",
                 n.fat_100,
-                n.saturated_fat_100.map(|v| format!("{:.1} g", v)).unwrap_or_else(|| "未标注 (保持未污染)".to_string())
+                n.saturated_fat_100
+                    .map(|v| format!("{:.1} g", v))
+                    .unwrap_or_else(|| "未标注 (保持未污染)".to_string())
             );
             println!(
                 "  * 碳水化合物:   {:.1} g (糖分: {}, 膳食纤维: {})",
                 n.carbohydrates_100,
-                n.sugars_100.map(|v| format!("{:.1} g", v)).unwrap_or_else(|| "未标注".to_string()),
-                n.fiber_100.map(|v| format!("{:.1} g", v)).unwrap_or_else(|| "未标注".to_string())
+                n.sugars_100
+                    .map(|v| format!("{:.1} g", v))
+                    .unwrap_or_else(|| "未标注".to_string()),
+                n.fiber_100
+                    .map(|v| format!("{:.1} g", v))
+                    .unwrap_or_else(|| "未标注".to_string())
             );
             println!(
                 "  * 钠 (Sodium):  {}",
-                n.sodium_mg_100.map(|v| format!("{:.1} mg", v)).unwrap_or_else(|| "未标注 (保持未污染)".to_string())
+                n.sodium_mg_100
+                    .map(|v| format!("{:.1} mg", v))
+                    .unwrap_or_else(|| "未标注 (保持未污染)".to_string())
             );
 
             // 微量元素展示
             let format_micro = |val: Option<f64>, unit: &str| {
-                val.map(|v| format!("{:.1} {}", v, unit)).unwrap_or_else(|| "未标注/未知 (保持 None，避免数据稀释)".to_string())
+                val.map(|v| format!("{:.1} {}", v, unit))
+                    .unwrap_or_else(|| "未标注/未知 (保持 None，避免数据稀释)".to_string())
             };
             println!("  * 钙 (Calcium):    {}", format_micro(n.calcium_mg_100, "mg"));
             println!("  * 铁 (Iron):       {}", format_micro(n.iron_mg_100, "mg"));
@@ -1101,7 +1160,10 @@ fn handle_barcode(args: &[String]) {
                 match main_storage.insert_food(&food_record, &product.nutriments) {
                     Ok(_) => {
                         println!("\n[已保存] 该食品已成功保存至本地用户主库 (litebalance.db)！");
-                        println!("  可使用 'search {}' 进行离线全文检索，或使用 'log-food --id {}' 直接打卡记录。", product.food_name, product.barcode.standard_code);
+                        println!(
+                            "  可使用 'search {}' 进行离线全文检索，或使用 'log-food --id {}' 直接打卡记录。",
+                            product.food_name, product.barcode.standard_code
+                        );
                     }
                     Err(e) => {
                         eprintln!("\n[警告] 保存至用户主库失败: {}", e);
@@ -1191,9 +1253,8 @@ fn get_or_create_default_profile(storage: &StorageEngine) -> UserProfile {
             "very" | "veryactive" => ActivityLevel::VeryActive,
             _ => ActivityLevel::Active,
         };
-        UserProfile::new(30, u.height_cm, u.weight_kg, gender, act).unwrap_or_else(|_| {
-            UserProfile::new(30, 175.0, 75.0, Gender::Male, ActivityLevel::Active).unwrap()
-        })
+        UserProfile::new(30, u.height_cm, u.weight_kg, gender, act)
+            .unwrap_or_else(|_| UserProfile::new(30, 175.0, 75.0, Gender::Male, ActivityLevel::Active).unwrap())
     } else {
         let profile = UserProfile::new(30, 175.0, 75.0, Gender::Male, ActivityLevel::Active).unwrap();
         let _ = storage.insert_user(user_id, "User", "1994-01-01", &profile);
@@ -1203,11 +1264,7 @@ fn get_or_create_default_profile(storage: &StorageEngine) -> UserProfile {
 
 /// 处理 `activity` 指令：运动与体力活动打卡 (log / list / catalog / delete)。
 fn handle_activity(args: &[String]) {
-    let sub = if args.is_empty() {
-        "list"
-    } else {
-        args[0].as_str()
-    };
+    let sub = if args.is_empty() { "list" } else { args[0].as_str() };
 
     let storage = open_app_storage();
     let user_id = "default_user";
@@ -1220,7 +1277,10 @@ fn handle_activity(args: &[String]) {
             println!("\n=========================================================================================");
             println!("  临床标准 MET 运动知识库 (Herrmann et al. 2024 / Compendium of Physical Activities)");
             println!("=========================================================================================");
-            println!("{:<28} {:<24} {:<8} {:<18} 场景描述", "运动编码 (CODE)", "中文名称", "MET", "运动模态");
+            println!(
+                "{:<28} {:<24} {:<8} {:<18} 场景描述",
+                "运动编码 (CODE)", "中文名称", "MET", "运动模态"
+            );
             println!("{:-<105}", "");
 
             for item in catalog {
@@ -1243,29 +1303,43 @@ fn handle_activity(args: &[String]) {
             println!("\n提示: 可使用 'litebalance activity log --code <CODE> --duration <分钟>' 快速打卡。\n");
         }
         "log" => {
-            let code = get_arg_val(args, "--code").or_else(|| {
-                if args.len() > 1 && !args[1].starts_with("--") {
-                    Some(args[1].clone())
-                } else {
-                    None
-                }
-            }).expect("缺少必填参数 --code <CODE>。示例: litebalance activity log --code running_10kph --duration 45");
+            let code = get_arg_val(args, "--code")
+                .or_else(|| {
+                    if args.len() > 1 && !args[1].starts_with("--") {
+                        Some(args[1].clone())
+                    } else {
+                        None
+                    }
+                })
+                .expect(
+                    "缺少必填参数 --code <CODE>。示例: litebalance activity log --code running_10kph --duration 45",
+                );
 
             let duration: f64 = get_arg_val(args, "--duration")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(30.0);
 
-            let date = get_arg_val(args, "--date")
-                .unwrap_or_else(|| chrono::Local::now().format("%Y-%m-%d").to_string());
+            let date =
+                get_arg_val(args, "--date").unwrap_or_else(|| chrono::Local::now().format("%Y-%m-%d").to_string());
 
             let profile = get_or_create_default_profile(&storage);
 
             // 查找运动标准条目
             let (name, category, met, modality) = if let Some(item) = find_activity_by_code(&code) {
-                (item.name_zh.to_string(), item.category.as_str().to_string(), item.met_value, item.modality)
+                (
+                    item.name_zh.to_string(),
+                    item.category.as_str().to_string(),
+                    item.met_value,
+                    item.modality,
+                )
             } else {
                 let custom_met: f64 = get_arg_val(args, "--met").and_then(|s| s.parse().ok()).unwrap_or(5.0);
-                (format!("自定义运动 ({})", code), "custom".to_string(), custom_met, ExerciseModality::HybridHiit)
+                (
+                    format!("自定义运动 ({})", code),
+                    "custom".to_string(),
+                    custom_met,
+                    ExerciseModality::HybridHiit,
+                )
             };
 
             let state = match get_arg_val(args, "--state").as_deref() {
@@ -1309,26 +1383,35 @@ fn handle_activity(args: &[String]) {
             println!("* 记录日期:      {}", date);
             println!("* 运动项目:      {} ({})", name, code);
             println!("* 持续时间:      {:.0} 分钟 (标准 MET: {:.1})", duration, met);
-            println!("* 名义总能量消耗: {:.1} kcal (未经折算的表面能耗)", comp_res.reported_kcal);
+            println!(
+                "* 名义总能量消耗: {:.1} kcal (未经折算的表面能耗)",
+                comp_res.reported_kcal
+            );
             println!(
                 "* 科学净计入消耗: {:.1} kcal (实际计入每日摄入预算，折算率 {:.0}%)",
-                comp_res.credited_kcal, comp_res.effective_multiplier * 100.0
+                comp_res.credited_kcal,
+                comp_res.effective_multiplier * 100.0
             );
             println!(
                 "* 代偿抵消挤压:   {:.1} kcal (被基础代谢与自发性活动吸收抵消)",
                 comp_res.compensated_kcal
             );
             println!("* 生理代偿依据:   {}", comp_res.scientific_rationale);
-            println!("\n提示: 运行 'litebalance balance --date {}' 查看今日净热量赤字/盈余闭环。\n", date);
+            println!(
+                "\n提示: 运行 'litebalance balance --date {}' 查看今日净热量赤字/盈余闭环。\n",
+                date
+            );
         }
         "delete" => {
-            let id = get_arg_val(args, "--id").or_else(|| {
-                if args.len() > 1 && !args[1].starts_with("--") {
-                    Some(args[1].clone())
-                } else {
-                    None
-                }
-            }).expect("缺少参数 --id <ID>");
+            let id = get_arg_val(args, "--id")
+                .or_else(|| {
+                    if args.len() > 1 && !args[1].starts_with("--") {
+                        Some(args[1].clone())
+                    } else {
+                        None
+                    }
+                })
+                .expect("缺少参数 --id <ID>");
 
             match storage.delete_activity(user_id, &id) {
                 Ok(true) => println!("\n已成功删除运动打卡记录 ID: {}\n", id),
@@ -1337,8 +1420,8 @@ fn handle_activity(args: &[String]) {
             }
         }
         _ => {
-            let date = get_arg_val(args, "--date")
-                .unwrap_or_else(|| chrono::Local::now().format("%Y-%m-%d").to_string());
+            let date =
+                get_arg_val(args, "--date").unwrap_or_else(|| chrono::Local::now().format("%Y-%m-%d").to_string());
 
             let activities = storage.get_activities_for_date(user_id, &date).unwrap_or_default();
 
@@ -1349,7 +1432,10 @@ fn handle_activity(args: &[String]) {
             if activities.is_empty() {
                 println!("今日暂无运动打卡记录。使用 'activity log --code <CODE> --duration <MIN>' 添加运动。");
             } else {
-                println!("{:<28} {:<10} {:<14} {:<14} {:<10}", "运动名称", "时长(分)", "名义消耗(kcal)", "净计入(kcal)", "代偿率");
+                println!(
+                    "{:<28} {:<10} {:<14} {:<14} {:<10}",
+                    "运动名称", "时长(分)", "名义消耗(kcal)", "净计入(kcal)", "代偿率"
+                );
                 println!("{:-<80}", "");
 
                 let mut total_gross = 0.0;
@@ -1371,7 +1457,9 @@ fn handle_activity(args: &[String]) {
                 println!("{:-<80}", "");
                 println!(
                     "当日合计: 名义消耗 {:.1} kcal | 净计入 {:.1} kcal | 代偿抵消扣除 {:.1} kcal",
-                    total_gross, total_net, (total_gross - total_net).max(0.0)
+                    total_gross,
+                    total_net,
+                    (total_gross - total_net).max(0.0)
                 );
             }
             println!();
@@ -1381,8 +1469,7 @@ fn handle_activity(args: &[String]) {
 
 /// 处理 `balance` 指令：每日全量能量闭环仪表盘（摄入 - 基础维持 - 运动名义 + 代偿 = 调整后 TDEE 与净热量差，支持 --boundary 生理日界线）。
 fn handle_balance(args: &[String]) {
-    let date = get_arg_val(args, "--date")
-        .unwrap_or_else(|| chrono::Local::now().format("%Y-%m-%d").to_string());
+    let date = get_arg_val(args, "--date").unwrap_or_else(|| chrono::Local::now().format("%Y-%m-%d").to_string());
     let boundary_offset = get_arg_val(args, "--boundary")
         .map(|b| DayBoundaryConfig::from_str_loose(&b).offset_total_minutes)
         .unwrap_or(0);
@@ -1410,7 +1497,10 @@ fn handle_balance(args: &[String]) {
     if boundary_offset > 0 {
         let h = boundary_offset / 60;
         let m = boundary_offset % 60;
-        println!("  每日全量能量闭环仪表盘 (Daily Energy Balance) [生理日界线: {:02}:{:02}]", h, m);
+        println!(
+            "  每日全量能量闭环仪表盘 (Daily Energy Balance) [生理日界线: {:02}:{:02}]",
+            h, m
+        );
     } else {
         println!("  每日全量能量闭环仪表盘 (Daily Energy Balance)");
     }
@@ -1418,16 +1508,34 @@ fn handle_balance(args: &[String]) {
     println!("* 评估核算日期:  {}", balance.date);
 
     println!("\n--- 1. 能量摄入与基准生理代谢 ---");
-    println!("  * 实际饮食摄入总热量:    {:.0} kcal (共打卡 {} 项餐食)", balance.total_intake_kcal, summary.items_count);
-    println!("  * 静息基准维持消耗 (TDEE): {:.0} kcal (遵循 NASEM 2023 临床回归方程)", balance.base_tdee_kcal);
+    println!(
+        "  * 实际饮食摄入总热量:    {:.0} kcal (共打卡 {} 项餐食)",
+        balance.total_intake_kcal, summary.items_count
+    );
+    println!(
+        "  * 静息基准维持消耗 (TDEE): {:.0} kcal (遵循 NASEM 2023 临床回归方程)",
+        balance.base_tdee_kcal
+    );
 
     println!("\n--- 2. 运动体力活动与 Pontzer 2026 代偿分析 ---");
-    println!("  * 运动上报名义总消耗:    {:.0} kcal", balance.gross_activity_burned_kcal);
-    println!("  * 代偿吸收扣减能耗:      {:.0} kcal (人体自我节律代偿，不转为可用额度)", balance.compensated_amount_kcal);
-    println!("  * 科学净有效计入消耗:    {:.0} kcal (真实有效能耗增量)", balance.net_activity_credited_kcal);
+    println!(
+        "  * 运动上报名义总消耗:    {:.0} kcal",
+        balance.gross_activity_burned_kcal
+    );
+    println!(
+        "  * 代偿吸收扣减能耗:      {:.0} kcal (人体自我节律代偿，不转为可用额度)",
+        balance.compensated_amount_kcal
+    );
+    println!(
+        "  * 科学净有效计入消耗:    {:.0} kcal (真实有效能耗增量)",
+        balance.net_activity_credited_kcal
+    );
 
     println!("\n--- 3. 闭环能量平衡结算与体成分趋势 ---");
-    println!("  * 今日调整后真实总能耗:  {:.0} kcal (Base TDEE + Net Credited)", balance.adjusted_tdee_kcal);
+    println!(
+        "  * 今日调整后真实总能耗:  {:.0} kcal (Base TDEE + Net Credited)",
+        balance.adjusted_tdee_kcal
+    );
 
     let status_str = if balance.net_caloric_balance_kcal < -100.0 {
         format!("[热量赤字/减脂期: {:.0} kcal]", balance.net_caloric_balance_kcal)
@@ -1436,7 +1544,10 @@ fn handle_balance(args: &[String]) {
     } else {
         "[热量维持平衡期]".to_string()
     };
-    println!("  * 今日最终净能量差:      {:+0.0} kcal  {}", balance.net_caloric_balance_kcal, status_str);
+    println!(
+        "  * 今日最终净能量差:      {:+0.0} kcal  {}",
+        balance.net_caloric_balance_kcal, status_str
+    );
     println!(
         "  * 理论体重大致趋势:      预计每周体重变化 {:+0.2} kg/周 (基于 7700 kcal 能量守恒)",
         balance.projected_weekly_weight_change_kg
@@ -1457,11 +1568,18 @@ fn handle_balance(args: &[String]) {
         };
         let budget_res = GoalProfileEngine::compute_adaptive_budget(&profile, &goal_config, &[]);
         println!("\n--- 5. 目标动态预算与摄入依从度 ---");
-        println!("  * 设定体态目标:          {} (每周速率 {:+.2} kg/周)", goal_config.kind.display_name(), goal_config.weekly_rate_kg);
+        println!(
+            "  * 设定体态目标:          {} (每周速率 {:+.2} kg/周)",
+            goal_config.kind.display_name(),
+            goal_config.weekly_rate_kg
+        );
         println!("  * 今日动态摄入预算:      {:.0} kcal", budget_res.daily_budget_kcal);
         let diff = balance.total_intake_kcal - budget_res.daily_budget_kcal;
         if diff > 0.0 {
-            println!("  * 预算执行状态:          超标 +{:.0} kcal (今日摄入高于自适应预算)", diff);
+            println!(
+                "  * 预算执行状态:          超标 +{:.0} kcal (今日摄入高于自适应预算)",
+                diff
+            );
         } else {
             println!("  * 预算执行状态:          剩余可用额度 {:.0} kcal", diff.abs());
         }
@@ -1471,11 +1589,7 @@ fn handle_balance(args: &[String]) {
 
 /// 处理 `goal` 指令：动态卡路里预算与自适应目标调节 (set / status / delete)。
 fn handle_goal(args: &[String]) {
-    let sub = if args.is_empty() {
-        "status"
-    } else {
-        args[0].as_str()
-    };
+    let sub = if args.is_empty() { "status" } else { args[0].as_str() };
 
     let storage = open_app_storage();
     let user_id = "default_user";
@@ -1527,20 +1641,32 @@ fn handle_goal(args: &[String]) {
                 println!("* 目标体重:        {:.1} kg (当前体重: {:.1} kg)", t, profile.weight_kg);
             }
             println!("* 目标每周速率:    {:+.2} kg/周", weekly_rate);
-            println!("* 平稳着陆缓冲:    {}", if taper_enabled { "开启 (距目标 5kg~1kg 平滑衰减)" } else { "关闭" });
-            println!("* OLS 自适应调节:  {}", if adaptive_enabled { "开启 (带 0.5 阻尼动态闭环微调)" } else { "关闭" });
+            println!(
+                "* 平稳着陆缓冲:    {}",
+                if taper_enabled {
+                    "开启 (距目标 5kg~1kg 平滑衰减)"
+                } else {
+                    "关闭"
+                }
+            );
+            println!(
+                "* OLS 自适应调节:  {}",
+                if adaptive_enabled {
+                    "开启 (带 0.5 阻尼动态闭环微调)"
+                } else {
+                    "关闭"
+                }
+            );
             if manual_offset.abs() > 0.1 {
                 println!("* 手动微调偏移:    {:+.0} kcal/天", manual_offset);
             }
             println!("\n提示: 运行 'litebalance goal status' 查看自适应预算与生理安全评估。\n");
         }
-        "delete" | "clear" => {
-            match storage.delete_user_goal(user_id) {
-                Ok(true) => println!("\n已成功清除用户目标配置，恢复为自然维持代谢模式。\n"),
-                Ok(false) => println!("\n当前未设定任何体态目标。\n"),
-                Err(e) => eprintln!("\n删除目标配置失败: {}\n", e),
-            }
-        }
+        "delete" | "clear" => match storage.delete_user_goal(user_id) {
+            Ok(true) => println!("\n已成功清除用户目标配置，恢复为自然维持代谢模式。\n"),
+            Ok(false) => println!("\n当前未设定任何体态目标。\n"),
+            Err(e) => eprintln!("\n删除目标配置失败: {}\n", e),
+        },
         _ => {
             let goal_opt = storage.get_user_goal(user_id).unwrap_or(None);
             let goal_config = match goal_opt {
@@ -1562,37 +1688,57 @@ fn handle_goal(args: &[String]) {
             // 获取过去 30 天体重历史记录
             let weight_points = storage.get_weight_history(user_id, 30).unwrap_or_default();
 
-            let result = GoalProfileEngine::compute_adaptive_budget(
-                &profile,
-                &goal_config,
-                &weight_points,
-            );
+            let result = GoalProfileEngine::compute_adaptive_budget(&profile, &goal_config, &weight_points);
 
             println!("\n=========================================================================================");
             println!("  轻衡 (LiteBalance) 动态卡路里预算与自适应目标调节面板");
             println!("=========================================================================================");
-            println!("* 用户档案:        {:.1} kg, {:.1} cm | 生理表型: {:?} | 日常活动: {:?}",
-                profile.weight_kg, profile.height_cm, profile.gender, profile.activity_level);
-            println!("* 基准维持能耗:    {:.0} kcal/天 (遵循 NASEM 2023 DRI 临床多项式矩阵)", result.base_tdee_kcal);
+            println!(
+                "* 用户档案:        {:.1} kg, {:.1} cm | 生理表型: {:?} | 日常活动: {:?}",
+                profile.weight_kg, profile.height_cm, profile.gender, profile.activity_level
+            );
+            println!(
+                "* 基准维持能耗:    {:.0} kcal/天 (遵循 NASEM 2023 DRI 临床多项式矩阵)",
+                result.base_tdee_kcal
+            );
 
             println!("\n--- 1. 目标设定与理论缺口/盈余 ---");
             println!("* 目标类型:        {}", goal_config.kind.display_name());
             if let Some(t) = goal_config.target_weight_kg {
-                println!("* 目标体重:        {:.1} kg (距离目标差额: {:+.1} kg)", t, t - profile.weight_kg);
+                println!(
+                    "* 目标体重:        {:.1} kg (距离目标差额: {:+.1} kg)",
+                    t,
+                    t - profile.weight_kg
+                );
             }
-            println!("* 目标周速率:      {:+.2} kg/周 (理论调节: {:+.0} kcal/天)", goal_config.weekly_rate_kg, result.raw_rate_adjustment_kcal);
-            println!("* 平稳着陆状态:    衰减系数 {:.0}% (经缓冲后理论调节: {:+.0} kcal/天)", result.taper_factor * 100.0, result.tapered_adjustment_kcal);
+            println!(
+                "* 目标周速率:      {:+.2} kg/周 (理论调节: {:+.0} kcal/天)",
+                goal_config.weekly_rate_kg, result.raw_rate_adjustment_kcal
+            );
+            println!(
+                "* 平稳着陆状态:    衰减系数 {:.0}% (经缓冲后理论调节: {:+.0} kcal/天)",
+                result.taper_factor * 100.0,
+                result.tapered_adjustment_kcal
+            );
 
             println!("\n--- 2. 近期体重 OLS 回归与自适应闭环反馈 ---");
             if let Some(actual_rate) = result.actual_ols_weekly_rate_kg {
                 println!("* 过去30天称重记录: 共采样 {} 组有效数据点", weight_points.len());
-                println!("* 实际每周变化速率: {:+.2} kg/周 (基于 OLS 最小二乘法线性回归斜率)", actual_rate);
+                println!(
+                    "* 实际每周变化速率: {:+.2} kg/周 (基于 OLS 最小二乘法线性回归斜率)",
+                    actual_rate
+                );
                 if let Some(diff) = result.rate_discrepancy_kg {
                     println!("* 速率偏离差额:    {:+.2} kg/周 (实测速率 - 目标速率)", diff);
                 }
-                println!("* 自适应阻尼修正:  {:+.0} kcal/天 (0.5阻尼平滑，最大限制 ±250 kcal)", result.adaptive_correction_kcal);
+                println!(
+                    "* 自适应阻尼修正:  {:+.0} kcal/天 (0.5阻尼平滑，最大限制 ±250 kcal)",
+                    result.adaptive_correction_kcal
+                );
             } else {
-                println!("* 过去30天称重记录: 有效称重样本不足 2 次 (运行 'litebalance log-weight <KG>' 积累数据启动自适应)");
+                println!(
+                    "* 过去30天称重记录: 有效称重样本不足 2 次 (运行 'litebalance log-weight <KG>' 积累数据启动自适应)"
+                );
                 println!("* 自适应阻尼修正:  0 kcal/天 (保持理论开环计算)");
             }
             if result.manual_offset_kcal.abs() > 0.1 {
@@ -1600,7 +1746,10 @@ fn handle_goal(args: &[String]) {
             }
 
             println!("\n--- 3. 临床内分泌安全红线与最终推荐预算 ---");
-            println!("* 生理安全摄入底线: ≥ {:.0} kcal/天 (保护下丘脑-垂体-性腺轴与甲状腺基础代谢)", result.safety_floor_kcal);
+            println!(
+                "* 生理安全摄入底线: ≥ {:.0} kcal/天 (保护下丘脑-垂体-性腺轴与甲状腺基础代谢)",
+                result.safety_floor_kcal
+            );
             println!("* 未受限计算预算:  {:.0} kcal/天", result.unconstrained_budget_kcal);
             println!("* 今日最终动态预算: {:.0} kcal/天", result.daily_budget_kcal);
             if result.safety_floor_triggered {
@@ -1638,7 +1787,8 @@ fn handle_goal(args: &[String]) {
 /// 处理 `food-custom` 指令：管理本地自建食物（create 录入 / list 列表 / delete 删除）。
 fn handle_food_custom(args: &[String]) {
     if args.is_empty() {
-        println!(r#"
+        println!(
+            r#"
 用法: litebalance food-custom <SUBCOMMAND> [OPTIONS]
 
 子指令:
@@ -1669,7 +1819,8 @@ fn handle_food_custom(args: &[String]) {
   litebalance food-custom create --name "高蛋白乳清曲奇" --brand "家庭烘焙" --serving-size 60 --energy 220 --protein 18 --carbs 24 --fat 5.5
   litebalance food-custom list
   litebalance food-custom delete custom_abc123
-"#);
+"#
+        );
         return;
     }
 
@@ -1693,12 +1844,8 @@ fn handle_food_custom(args: &[String]) {
             let protein: f64 = get_arg_val(args, "--protein")
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(0.0);
-            let carbs: f64 = get_arg_val(args, "--carbs")
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(0.0);
-            let fat: f64 = get_arg_val(args, "--fat")
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(0.0);
+            let carbs: f64 = get_arg_val(args, "--carbs").and_then(|v| v.parse().ok()).unwrap_or(0.0);
+            let fat: f64 = get_arg_val(args, "--fat").and_then(|v| v.parse().ok()).unwrap_or(0.0);
 
             let fiber = get_arg_val(args, "--fiber").and_then(|v| v.parse().ok());
             let sodium = get_arg_val(args, "--sodium").and_then(|v| v.parse().ok());
@@ -1748,68 +1895,74 @@ fn handle_food_custom(args: &[String]) {
             };
 
             match CustomFoodEngine::normalize_draft(&draft) {
-                Ok(norm) => {
-                    match storage.insert_food(&norm.food, &norm.nutriments_100g) {
-                        Ok(_) => {
-                            println!("\n=======================================================");
-                            println!("  [成功录入本地自建食物]");
-                            println!("=======================================================");
-                            println!("  * 食物 ID:       {}", norm.food.id);
-                            println!("  * 食品名称:      {}", norm.food.name);
-                            if let Some(b) = &norm.food.brand {
-                                println!("  * 品牌/产地:     {}", b);
-                            }
-                            if let (Some(q), Some(u)) = (norm.food.serving_quantity, &norm.food.serving_unit) {
-                                println!("  * 包装单份份量:  {} {}", q, u);
-                            }
-                            println!("  * 每100g标准归一化营养素:");
-                            println!("      - 能量:       {:.1} kcal", norm.nutriments_100g.energy_kcal_100);
-                            println!("      - 蛋白质:     {:.1} g", norm.nutriments_100g.proteins_100);
-                            println!("      - 碳水化合物: {:.1} g", norm.nutriments_100g.carbohydrates_100);
-                            println!("      - 脂肪:       {:.1} g", norm.nutriments_100g.fat_100);
-                            if let Some(fib) = norm.nutriments_100g.fiber_100 {
-                                println!("      - 膳食纤维:   {:.1} g", fib);
-                            }
-                            if let Some(sod) = norm.nutriments_100g.sodium_mg_100 {
-                                println!("      - 钠:         {:.1} mg", sod);
-                            }
-                            println!("  * 全文检索索引:  已自动同步至 FTS5 全文索引，随时可使用 `search` 指令检索！");
-                            println!();
+                Ok(norm) => match storage.insert_food(&norm.food, &norm.nutriments_100g) {
+                    Ok(_) => {
+                        println!("\n=======================================================");
+                        println!("  [成功录入本地自建食物]");
+                        println!("=======================================================");
+                        println!("  * 食物 ID:       {}", norm.food.id);
+                        println!("  * 食品名称:      {}", norm.food.name);
+                        if let Some(b) = &norm.food.brand {
+                            println!("  * 品牌/产地:     {}", b);
                         }
-                        Err(e) => eprintln!("存储自建食物失败: {}", e),
+                        if let (Some(q), Some(u)) = (norm.food.serving_quantity, &norm.food.serving_unit) {
+                            println!("  * 包装单份份量:  {} {}", q, u);
+                        }
+                        println!("  * 每100g标准归一化营养素:");
+                        println!("      - 能量:       {:.1} kcal", norm.nutriments_100g.energy_kcal_100);
+                        println!("      - 蛋白质:     {:.1} g", norm.nutriments_100g.proteins_100);
+                        println!("      - 碳水化合物: {:.1} g", norm.nutriments_100g.carbohydrates_100);
+                        println!("      - 脂肪:       {:.1} g", norm.nutriments_100g.fat_100);
+                        if let Some(fib) = norm.nutriments_100g.fiber_100 {
+                            println!("      - 膳食纤维:   {:.1} g", fib);
+                        }
+                        if let Some(sod) = norm.nutriments_100g.sodium_mg_100 {
+                            println!("      - 钠:         {:.1} mg", sod);
+                        }
+                        println!("  * 全文检索索引:  已自动同步至 FTS5 全文索引，随时可使用 `search` 指令检索！");
+                        println!();
                     }
-                }
+                    Err(e) => eprintln!("存储自建食物失败: {}", e),
+                },
                 Err(e) => eprintln!("自建食物参数校验归一化失败: {}", e),
             }
         }
-        "list" => {
-            match storage.list_custom_foods() {
-                Ok(foods) => {
-                    println!("\n=======================================================");
-                    println!("  用户本地自建食物列表 (共 {} 项)", foods.len());
-                    println!("=======================================================");
-                    if foods.is_empty() {
-                        println!("暂无自建食物。使用 `litebalance food-custom create` 录入第一款食品。");
-                    } else {
-                        println!("{:<24} | {:<16} | {:<8} | {:<8} | {:<8} | {:<8}", "ID", "名称", "能量/100g", "蛋白", "碳水", "脂肪");
-                        println!("{:-<24}-+-{:-<16}-+-{:-<8}-+-{:-<8}-+-{:-<8}-+-{:-<8}", "", "", "", "", "", "");
-                        for f in foods {
-                            println!(
-                                "{:<24} | {:<16} | {:>6.0} k | {:>6.1}g | {:>6.1}g | {:>6.1}g",
-                                f.food.id,
-                                if f.food.name.chars().count() > 14 { format!("{}...", f.food.name.chars().take(12).collect::<String>()) } else { f.food.name },
-                                f.nutriments.energy_kcal_100,
-                                f.nutriments.proteins_100,
-                                f.nutriments.carbohydrates_100,
-                                f.nutriments.fat_100
-                            );
-                        }
+        "list" => match storage.list_custom_foods() {
+            Ok(foods) => {
+                println!("\n=======================================================");
+                println!("  用户本地自建食物列表 (共 {} 项)", foods.len());
+                println!("=======================================================");
+                if foods.is_empty() {
+                    println!("暂无自建食物。使用 `litebalance food-custom create` 录入第一款食品。");
+                } else {
+                    println!(
+                        "{:<24} | {:<16} | {:<8} | {:<8} | {:<8} | {:<8}",
+                        "ID", "名称", "能量/100g", "蛋白", "碳水", "脂肪"
+                    );
+                    println!(
+                        "{:-<24}-+-{:-<16}-+-{:-<8}-+-{:-<8}-+-{:-<8}-+-{:-<8}",
+                        "", "", "", "", "", ""
+                    );
+                    for f in foods {
+                        println!(
+                            "{:<24} | {:<16} | {:>6.0} k | {:>6.1}g | {:>6.1}g | {:>6.1}g",
+                            f.food.id,
+                            if f.food.name.chars().count() > 14 {
+                                format!("{}...", f.food.name.chars().take(12).collect::<String>())
+                            } else {
+                                f.food.name
+                            },
+                            f.nutriments.energy_kcal_100,
+                            f.nutriments.proteins_100,
+                            f.nutriments.carbohydrates_100,
+                            f.nutriments.fat_100
+                        );
                     }
-                    println!();
                 }
-                Err(e) => eprintln!("查询自建食物失败: {}", e),
+                println!();
             }
-        }
+            Err(e) => eprintln!("查询自建食物失败: {}", e),
+        },
         "delete" => {
             if args.len() < 2 {
                 eprintln!("错误: 请指定要删除的食物 ID。例如: litebalance food-custom delete custom_abc");
@@ -1831,7 +1984,8 @@ fn handle_food_custom(args: &[String]) {
 /// 处理 `unit` 指令：多单位制公英制临床级双向换算。
 fn handle_unit(args: &[String]) {
     if args.is_empty() {
-        println!(r#"
+        println!(
+            r#"
 用法: litebalance unit [SUBCOMMAND] [OPTIONS]
 
 选项 / 参数:
@@ -1847,18 +2001,20 @@ fn handle_unit(args: &[String]) {
   litebalance unit 2000 kcal
   litebalance unit 100 g
   litebalance unit 500 ml
-"#);
+"#
+        );
         return;
     }
 
     // 解析数值与单位
-    let (val, unit_raw) = if let (Some(v_str), Some(u_str)) = (get_arg_val(args, "--value"), get_arg_val(args, "--from")) {
-        (v_str.parse::<f64>().ok(), Some(u_str))
-    } else {
-        let v = args[0].parse::<f64>().ok();
-        let u = if args.len() > 1 { Some(args[1].clone()) } else { None };
-        (v, u)
-    };
+    let (val, unit_raw) =
+        if let (Some(v_str), Some(u_str)) = (get_arg_val(args, "--value"), get_arg_val(args, "--from")) {
+            (v_str.parse::<f64>().ok(), Some(u_str))
+        } else {
+            let v = args[0].parse::<f64>().ok();
+            let u = if args.len() > 1 { Some(args[1].clone()) } else { None };
+            (v, u)
+        };
 
     let value = match val {
         Some(v) => v,
@@ -1976,7 +2132,10 @@ fn handle_unit(args: &[String]) {
         }
 
         _ => {
-            eprintln!("不支持的单位类型: '{}'。支持的单位包括: kg, lbs, st, cm, in, ft, kcal, kj, g, oz, ml, floz", unit);
+            eprintln!(
+                "不支持的单位类型: '{}'。支持的单位包括: kg, lbs, st, cm, in, ft, kcal, kj, g, oz, ml, floz",
+                unit
+            );
         }
     }
     println!();
@@ -1985,7 +2144,8 @@ fn handle_unit(args: &[String]) {
 /// 处理 `user` 指令：多用户档案与关联数据管理（list 列表 / delete 级联清空）。
 fn handle_user(args: &[String]) {
     if args.is_empty() {
-        println!(r#"
+        println!(
+            r#"
 用法: litebalance user <SUBCOMMAND> [OPTIONS]
 
 子指令:
@@ -1995,7 +2155,8 @@ fn handle_user(args: &[String]) {
 示例:
   litebalance user list
   litebalance user delete default_user
-"#);
+"#
+        );
         return;
     }
 
@@ -2003,36 +2164,40 @@ fn handle_user(args: &[String]) {
     let subcmd = args[0].to_lowercase();
 
     match subcmd.as_str() {
-        "list" => {
-            match storage.list_all_users() {
-                Ok(users) => {
-                    println!("\n=======================================================");
-                    println!("  已注册用户档案列表 (共 {} 位)", users.len());
-                    println!("=======================================================");
-                    if users.is_empty() {
-                        println!("当前数据库中无任何用户档案。");
-                    } else {
-                        println!("{:<28} {:<16} {:<12} {:<8} {:<12}", "ID", "姓名", "身高(cm)", "体重(kg)", "活动水平");
-                        println!("{:-<80}", "");
-                        for u in users {
-                            println!(
-                                "{:<28} {:<16} {:<12.1} {:<8.1} {}",
-                                u.id, u.name, u.height_cm, u.weight_kg, u.activity_level
-                            );
-                        }
+        "list" => match storage.list_all_users() {
+            Ok(users) => {
+                println!("\n=======================================================");
+                println!("  已注册用户档案列表 (共 {} 位)", users.len());
+                println!("=======================================================");
+                if users.is_empty() {
+                    println!("当前数据库中无任何用户档案。");
+                } else {
+                    println!(
+                        "{:<28} {:<16} {:<12} {:<8} {:<12}",
+                        "ID", "姓名", "身高(cm)", "体重(kg)", "活动水平"
+                    );
+                    println!("{:-<80}", "");
+                    for u in users {
+                        println!(
+                            "{:<28} {:<16} {:<12.1} {:<8.1} {}",
+                            u.id, u.name, u.height_cm, u.weight_kg, u.activity_level
+                        );
                     }
-                    println!();
                 }
-                Err(e) => eprintln!("查询用户列表失败: {}", e),
+                println!();
             }
-        }
+            Err(e) => eprintln!("查询用户列表失败: {}", e),
+        },
         "delete" => {
             if args.len() < 2 {
                 eprintln!("错误: 请指定要删除的用户 ID。例如: litebalance user delete default_user");
                 return;
             }
             let target_user_id = &args[1];
-            println!("\n警告: 此操作将永久删除用户 '{}' 及其所有关联数据（摄入、体重、饮水、断食、运动记录等），不可撤销！", target_user_id);
+            println!(
+                "\n警告: 此操作将永久删除用户 '{}' 及其所有关联数据（摄入、体重、饮水、断食、运动记录等），不可撤销！",
+                target_user_id
+            );
             match storage.delete_all_user_data(target_user_id) {
                 Ok(true) => println!("已成功级联清空并删除用户: {}\n", target_user_id),
                 Ok(false) => eprintln!("未找到指定用户 ID: {}\n", target_user_id),

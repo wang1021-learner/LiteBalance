@@ -12,8 +12,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::calc::workout_compensation::{
-    CompensationMode, ExerciseModality, NutritionState, WorkoutCompensationCalc,
-    WorkoutCompensationResult,
+    CompensationMode, ExerciseModality, NutritionState, WorkoutCompensationCalc, WorkoutCompensationResult,
 };
 use crate::models::UserProfile;
 
@@ -130,7 +129,6 @@ pub fn get_standard_activity_catalog() -> Vec<ActivityCatalogItem> {
             modality: ExerciseModality::Aerobic,
             description: "高强度乳酸阈值耐力跑。",
         },
-
         // 2. 步行与低强度活动
         ActivityCatalogItem {
             code: "walking_brisk_5kph",
@@ -150,7 +148,6 @@ pub fn get_standard_activity_catalog() -> Vec<ActivityCatalogItem> {
             modality: ExerciseModality::LowIntensityActive,
             description: "轻松平地慢走散步，促进消化与主动恢复。",
         },
-
         // 3. 骑行类
         ActivityCatalogItem {
             code: "cycling_moderate_20kph",
@@ -179,7 +176,6 @@ pub fn get_standard_activity_catalog() -> Vec<ActivityCatalogItem> {
             modality: ExerciseModality::HybridHiit,
             description: "高强度间歇爬坡与冲刺单车训练。",
         },
-
         // 4. 抗阻力量训练
         ActivityCatalogItem {
             code: "strength_training_general",
@@ -208,7 +204,6 @@ pub fn get_standard_activity_catalog() -> Vec<ActivityCatalogItem> {
             modality: ExerciseModality::ResistanceTraining,
             description: "徒手自身体重体能与核心力量训练。",
         },
-
         // 5. 间歇与高强度综合训练 (HIIT / CrossFit)
         ActivityCatalogItem {
             code: "hiit_circuit",
@@ -237,7 +232,6 @@ pub fn get_standard_activity_catalog() -> Vec<ActivityCatalogItem> {
             modality: ExerciseModality::HybridHiit,
             description: "高效率全身协调跳跃体能训练。",
         },
-
         // 6. 水上活动
         ActivityCatalogItem {
             code: "swimming_freestyle_moderate",
@@ -257,7 +251,6 @@ pub fn get_standard_activity_catalog() -> Vec<ActivityCatalogItem> {
             modality: ExerciseModality::Aerobic,
             description: "常规中低强度休闲蛙泳锻炼。",
         },
-
         // 7. 球类体育
         ActivityCatalogItem {
             code: "basketball_game",
@@ -286,7 +279,6 @@ pub fn get_standard_activity_catalog() -> Vec<ActivityCatalogItem> {
             modality: ExerciseModality::Aerobic,
             description: "频繁前后场折返跑动与挥拍扣杀。",
         },
-
         // 8. 身心拉伸与柔韧
         ActivityCatalogItem {
             code: "yoga_flow",
@@ -381,8 +373,7 @@ impl DailyEnergyBalance {
         let adjusted_tdee_kcal = (base_tdee_kcal + net_activity_credited_kcal).round();
         let net_caloric_balance_kcal = (total_intake_kcal - adjusted_tdee_kcal).round();
         let is_deficit = net_caloric_balance_kcal < 0.0;
-        let projected_weekly_weight_change_kg =
-            ((net_caloric_balance_kcal * 7.0 / 7700.0) * 100.0).round() / 100.0;
+        let projected_weekly_weight_change_kg = ((net_caloric_balance_kcal * 7.0 / 7700.0) * 100.0).round() / 100.0;
 
         let compensation_diagnostic = if compensated_amount_kcal > 1.0 {
             format!(

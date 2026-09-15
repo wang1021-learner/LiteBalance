@@ -43,20 +43,46 @@ impl EnergyCalc {
     /// 第 5 章：预估能量需求预测方程的开发（基于双标水真实代谢测定矩阵）。
     pub fn nasem_2023(profile: &UserProfile) -> f64 {
         match profile.gender {
-            Gender::Male => Self::nasem_2023_male(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level),
-            Gender::Female => Self::nasem_2023_female(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level),
+            Gender::Male => Self::nasem_2023_male(
+                profile.age,
+                profile.height_cm,
+                profile.weight_kg,
+                profile.activity_level,
+            ),
+            Gender::Female => Self::nasem_2023_female(
+                profile.age,
+                profile.height_cm,
+                profile.weight_kg,
+                profile.activity_level,
+            ),
             Gender::NonBinary(hormone) => match hormone {
                 HormoneProfile::Averaged => {
-                    let male = Self::nasem_2023_male(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level);
-                    let female = Self::nasem_2023_female(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level);
+                    let male = Self::nasem_2023_male(
+                        profile.age,
+                        profile.height_cm,
+                        profile.weight_kg,
+                        profile.activity_level,
+                    );
+                    let female = Self::nasem_2023_female(
+                        profile.age,
+                        profile.height_cm,
+                        profile.weight_kg,
+                        profile.activity_level,
+                    );
                     (male + female) / 2.0
                 }
-                HormoneProfile::EstrogenTypical => {
-                    Self::nasem_2023_female(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level)
-                }
-                HormoneProfile::TestosteroneTypical => {
-                    Self::nasem_2023_male(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level)
-                }
+                HormoneProfile::EstrogenTypical => Self::nasem_2023_female(
+                    profile.age,
+                    profile.height_cm,
+                    profile.weight_kg,
+                    profile.activity_level,
+                ),
+                HormoneProfile::TestosteroneTypical => Self::nasem_2023_male(
+                    profile.age,
+                    profile.height_cm,
+                    profile.weight_kg,
+                    profile.activity_level,
+                ),
             },
         }
     }
@@ -105,20 +131,46 @@ impl EnergyCalc {
     /// - 女性: TEE = 387 - 7.31 * A + PA * (10.9 * W + 660.7 * H_m)
     pub fn iom_2005(profile: &UserProfile) -> f64 {
         match profile.gender {
-            Gender::Male => Self::iom_2005_male(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level),
-            Gender::Female => Self::iom_2005_female(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level),
+            Gender::Male => Self::iom_2005_male(
+                profile.age,
+                profile.height_cm,
+                profile.weight_kg,
+                profile.activity_level,
+            ),
+            Gender::Female => Self::iom_2005_female(
+                profile.age,
+                profile.height_cm,
+                profile.weight_kg,
+                profile.activity_level,
+            ),
             Gender::NonBinary(hormone) => match hormone {
                 HormoneProfile::Averaged => {
-                    let male = Self::iom_2005_male(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level);
-                    let female = Self::iom_2005_female(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level);
+                    let male = Self::iom_2005_male(
+                        profile.age,
+                        profile.height_cm,
+                        profile.weight_kg,
+                        profile.activity_level,
+                    );
+                    let female = Self::iom_2005_female(
+                        profile.age,
+                        profile.height_cm,
+                        profile.weight_kg,
+                        profile.activity_level,
+                    );
                     (male + female) / 2.0
                 }
-                HormoneProfile::EstrogenTypical => {
-                    Self::iom_2005_female(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level)
-                }
-                HormoneProfile::TestosteroneTypical => {
-                    Self::iom_2005_male(profile.age, profile.height_cm, profile.weight_kg, profile.activity_level)
-                }
+                HormoneProfile::EstrogenTypical => Self::iom_2005_female(
+                    profile.age,
+                    profile.height_cm,
+                    profile.weight_kg,
+                    profile.activity_level,
+                ),
+                HormoneProfile::TestosteroneTypical => Self::iom_2005_male(
+                    profile.age,
+                    profile.height_cm,
+                    profile.weight_kg,
+                    profile.activity_level,
+                ),
             },
         }
     }
@@ -217,7 +269,8 @@ mod tests {
             70.0,
             Gender::NonBinary(HormoneProfile::Averaged),
             ActivityLevel::Active,
-        ).unwrap();
+        )
+        .unwrap();
 
         let male = EnergyCalc::nasem_2023_male(30, 170.0, 70.0, ActivityLevel::Active);
         let female = EnergyCalc::nasem_2023_female(30, 170.0, 70.0, ActivityLevel::Active);
@@ -229,13 +282,7 @@ mod tests {
 
     #[test]
     fn test_comparison_shows_refinement() {
-        let profile = UserProfile::new(
-            30,
-            175.0,
-            75.0,
-            Gender::Male,
-            ActivityLevel::LowActive,
-        ).unwrap();
+        let profile = UserProfile::new(30, 175.0, 75.0, Gender::Male, ActivityLevel::LowActive).unwrap();
 
         let comp = EnergyCalc::compare(&profile);
         assert!(comp.nasem_2023_kcal > 2000.0);
