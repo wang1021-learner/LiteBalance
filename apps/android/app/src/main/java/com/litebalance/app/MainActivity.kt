@@ -53,7 +53,7 @@ import com.litebalance.app.ui.DashboardScreen
 import com.litebalance.app.ui.FoodScreen
 import com.litebalance.app.ui.HealthHubScreen
 import com.litebalance.app.ui.PlanScreen
-import com.litebalance.app.ui.theme.AppleColors
+import com.litebalance.app.ui.theme.AppColors
 import com.litebalance.app.ui.theme.LiquidGlassTokens
 import com.litebalance.app.ui.theme.ThemeLiteBalance
 
@@ -81,7 +81,6 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     bottomBar = {
-                        // 苹果 iPhone 悬浮液态玻璃底栏 (Floating Liquid Glass Island)
                         FloatingLiquidGlassNavBar(
                             items = navItems,
                             currentRoute = currentRoute,
@@ -120,9 +119,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * 苹果 iPhone 悬浮液态玻璃底栏 (Floating Liquid Glass Island)
- */
 @Composable
 private fun FloatingLiquidGlassNavBar(
     items: List<NavigationItem>,
@@ -142,7 +138,6 @@ private fun FloatingLiquidGlassNavBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                // 液态微光漫晕
                 .shadow(
                     elevation = 12.dp,
                     shape = shape,
@@ -150,7 +145,6 @@ private fun FloatingLiquidGlassNavBar(
                     spotColor = Color(0x14000000),
                 )
                 .clip(shape)
-                // 半透明液态玻璃质感
                 .background(
                     Brush.verticalGradient(
                         if (isDark) {
@@ -160,7 +154,6 @@ private fun FloatingLiquidGlassNavBar(
                         },
                     ),
                 )
-                // 顶部反射镜面高光线
                 .border(
                     width = 1.dp,
                     brush = if (isDark) LiquidGlassTokens.DarkBorder else LiquidGlassTokens.LightBorder,
@@ -173,11 +166,11 @@ private fun FloatingLiquidGlassNavBar(
             items.forEach { item ->
                 val selected = currentRoute == item.route
                 val activeBgColor by animateColorAsState(
-                    targetValue = if (selected) AppleColors.VitalityCoral.copy(alpha = 0.12f) else Color.Transparent,
+                    targetValue = if (selected) AppColors.VitalityCoral.copy(alpha = 0.12f) else Color.Transparent,
                     label = "navActiveBg",
                 )
                 val activeTint by animateColorAsState(
-                    targetValue = if (selected) AppleColors.VitalityCoral else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                    targetValue = if (selected) AppColors.VitalityCoral else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                     label = "navActiveTint",
                 )
 

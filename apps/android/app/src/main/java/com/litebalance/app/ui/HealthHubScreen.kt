@@ -47,16 +47,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.litebalance.app.model.AppStateManager
 import com.litebalance.app.model.ReproductiveStatus
-import com.litebalance.app.ui.components.AppleButton
-import com.litebalance.app.ui.components.AppleCard
-import com.litebalance.app.ui.components.AppleMetricItem
-import com.litebalance.app.ui.components.AppleSegmentedControl
-import com.litebalance.app.ui.components.AppleTextField
+import com.litebalance.app.ui.components.AppButton
+import com.litebalance.app.ui.components.AppCard
+import com.litebalance.app.ui.components.MetricItem
+import com.litebalance.app.ui.components.SegmentedControl
+import com.litebalance.app.ui.components.AppTextField
 import com.litebalance.app.ui.components.CapsuleBadge
-import com.litebalance.app.ui.theme.AppleColors
+import com.litebalance.app.ui.theme.AppColors
 
 /**
- * 健康汇与专业工具箱 (Apple Health / Settings 风格)
+ * 健康汇与工具。
  * 涵盖：多用户档案、生殖状态/非二元表型、NASEM 微量雷达、周期报表、多单位换算、备份导入导出
  */
 @Composable
@@ -97,10 +97,10 @@ fun HealthHubScreen() {
                     ),
                 )
             }
-            CapsuleBadge(text = currentUser.name, color = AppleColors.MintGreen)
+            CapsuleBadge(text = currentUser.name, color = AppColors.MintGreen)
         }
 
-        AppleSegmentedControl(
+        SegmentedControl(
             items = tabs,
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
@@ -132,7 +132,7 @@ private fun ProfileManagerTab() {
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        AppleCard {
+        AppCard {
             Text(
                 text = "当前档案：${currentUser.name}",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -141,10 +141,10 @@ private fun ProfileManagerTab() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                AppleMetricItem(label = "年龄", value = "${currentUser.age}", unit = "岁")
-                AppleMetricItem(label = "身高", value = "${currentUser.heightCm}", unit = "cm")
-                AppleMetricItem(label = "体重", value = "${currentUser.weightKg}", unit = "kg")
-                AppleMetricItem(label = "活动水平", value = currentUser.activityLevel)
+                MetricItem(label = "年龄", value = "${currentUser.age}", unit = "岁")
+                MetricItem(label = "身高", value = "${currentUser.heightCm}", unit = "cm")
+                MetricItem(label = "体重", value = "${currentUser.weightKg}", unit = "kg")
+                MetricItem(label = "活动水平", value = currentUser.activityLevel)
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
@@ -157,7 +157,7 @@ private fun ProfileManagerTab() {
                 )
                 Text(
                     text = currentUser.hormoneProfile.label,
-                    style = MaterialTheme.typography.bodyMedium.copy(color = AppleColors.IrisPurple),
+                    style = MaterialTheme.typography.bodyMedium.copy(color = AppColors.IrisPurple),
                 )
             }
 
@@ -172,9 +172,9 @@ private fun ProfileManagerTab() {
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 )
                 if (currentUser.reproductiveStatus.blocksAdultEnergyEquations) {
-                    CapsuleBadge(text = "能量规划已禁用", color = AppleColors.VitalityCoral)
+                    CapsuleBadge(text = "能量规划已禁用", color = AppColors.VitalityCoral)
                 } else {
-                    CapsuleBadge(text = "可使用成人能量方程", color = AppleColors.MintGreen)
+                    CapsuleBadge(text = "可使用成人能量方程", color = AppColors.MintGreen)
                 }
                 Text(
                     text = currentUser.reproductiveStatus.note,
@@ -191,7 +191,7 @@ private fun ProfileManagerTab() {
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .background(
-                                if (selected) AppleColors.VitalityCoral.copy(alpha = 0.12f)
+                                if (selected) AppColors.VitalityCoral.copy(alpha = 0.12f)
                                 else MaterialTheme.colorScheme.surfaceVariant,
                             )
                             .clickable { AppStateManager.updateCurrentReproductiveStatus(status) }
@@ -209,7 +209,7 @@ private fun ProfileManagerTab() {
         }
 
         // 切换其他用户档案 (需求 1)
-        AppleCard {
+        AppCard {
             Text(
                 text = "多用户档案列表 (切换 / 管理)",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -221,7 +221,7 @@ private fun ProfileManagerTab() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (isCurrent) AppleColors.MintGreenSoft else MaterialTheme.colorScheme.surfaceVariant)
+                        .background(if (isCurrent) AppColors.MintGreenSoft else MaterialTheme.colorScheme.surfaceVariant)
                         .clickable { AppStateManager.switchUser(profile.userId) }
                         .padding(12.dp),
                 ) {
@@ -238,7 +238,7 @@ private fun ProfileManagerTab() {
                             )
                         }
                         if (isCurrent) {
-                            CapsuleBadge(text = "当前使用中", color = AppleColors.MintGreen)
+                            CapsuleBadge(text = "当前使用中", color = AppColors.MintGreen)
                         }
                     }
                 }
@@ -256,7 +256,7 @@ private fun MicronutrientRadarTab() {
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        AppleCard {
+        AppCard {
             Text(
                 text = "NASEM DRI 临床微量营养素达标评估",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -272,7 +272,7 @@ private fun MicronutrientRadarTab() {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(AppStateManager.micronutrients) { item ->
-                AppleCard(contentPadding = 12.dp) {
+                AppCard(contentPadding = 12.dp) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -287,10 +287,10 @@ private fun MicronutrientRadarTab() {
                         }
 
                         val badgeColor = when {
-                            !item.isCoverageSufficient -> AppleColors.SlatePebble
-                            item.ratio >= 0.9f -> AppleColors.MintGreen
-                            item.ratio >= 0.6f -> AppleColors.AmberGold
-                            else -> AppleColors.VitalityCoral
+                            !item.isCoverageSufficient -> AppColors.SlatePebble
+                            item.ratio >= 0.9f -> AppColors.MintGreen
+                            item.ratio >= 0.6f -> AppColors.AmberGold
+                            else -> AppColors.VitalityCoral
                         }
 
                         CapsuleBadge(text = item.status, color = badgeColor)
@@ -303,7 +303,7 @@ private fun MicronutrientRadarTab() {
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(CircleShape),
-                            color = if (item.ratio >= 0.9f) AppleColors.MintGreen else AppleColors.AmberGold,
+                            color = if (item.ratio >= 0.9f) AppColors.MintGreen else AppColors.AmberGold,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         )
                     }
@@ -326,7 +326,7 @@ private fun PeriodicReportTab() {
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        AppleCard {
+        AppCard {
             Text(
                 text = "近 14 天临床代谢偏离度报表",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -335,9 +335,9 @@ private fun PeriodicReportTab() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                AppleMetricItem(label = "代谢偏离度", value = "-2.3", unit = "%", sublabel = "高精度吻合", accentColor = AppleColors.MintGreen)
-                AppleMetricItem(label = "热量缺口达成率", value = "94", unit = "%", accentColor = AppleColors.VitalityCoral)
-                AppleMetricItem(label = "断食依从率", value = "88", unit = "%", accentColor = AppleColors.AmberGold)
+                MetricItem(label = "代谢偏离度", value = "-2.3", unit = "%", sublabel = "高精度吻合", accentColor = AppColors.MintGreen)
+                MetricItem(label = "热量缺口达成率", value = "94", unit = "%", accentColor = AppColors.VitalityCoral)
+                MetricItem(label = "断食依从率", value = "88", unit = "%", accentColor = AppColors.AmberGold)
             }
             Text(
                 text = "代谢诊断结论：实测减重斜率与 Kevin Hall 微分方程高度一致，无显著适应性下调，未诱发皮质醇过度升高。",
@@ -345,7 +345,7 @@ private fun PeriodicReportTab() {
             )
         }
 
-        AppleCard {
+        AppCard {
             Text("周期平均摄入天平", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -356,7 +356,7 @@ private fun PeriodicReportTab() {
             }
             Text(
                 text = "三大宏量摄入能量贡献比：蛋白质 28% · 碳水化合物 44% · 脂肪 28%",
-                style = MaterialTheme.typography.labelSmall.copy(color = AppleColors.IrisPurple),
+                style = MaterialTheme.typography.labelSmall.copy(color = AppColors.IrisPurple),
             )
         }
     }
@@ -391,30 +391,30 @@ private fun UnitConverterTab() {
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        AppleCard {
+        AppCard {
             Text("体重高精度换算 (公制 / 英制 / 英石)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            AppleTextField(value = kgValue, onValueChange = { kgValue = it }, label = "公斤 (kg)", trailingText = "kg")
+            AppTextField(value = kgValue, onValueChange = { kgValue = it }, label = "公斤 (kg)", trailingText = "kg")
             Text(
                 text = "磅数：${"%.1f".format(lbs)} lbs\n英石进位制：${stones} st ${"%.1f".format(remLbs)} lb (英国临床标准)",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, color = AppleColors.VitalityCoral),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, color = AppColors.VitalityCoral),
             )
         }
 
-        AppleCard {
+        AppCard {
             Text("身高高精度换算 (cm / ft+in)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            AppleTextField(value = cmValue, onValueChange = { cmValue = it }, label = "厘米 (cm)", trailingText = "cm")
+            AppTextField(value = cmValue, onValueChange = { cmValue = it }, label = "厘米 (cm)", trailingText = "cm")
             Text(
                 text = "英尺与英寸：$feet ft ${"%.1f".format(remInches)} in",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, color = AppleColors.MintGreen),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, color = AppColors.MintGreen),
             )
         }
 
-        AppleCard {
+        AppCard {
             Text("能量热量换算 (kcal / kJ)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            AppleTextField(value = kcalValue, onValueChange = { kcalValue = it }, label = "千卡 (kcal)", trailingText = "kcal")
+            AppTextField(value = kcalValue, onValueChange = { kcalValue = it }, label = "千卡 (kcal)", trailingText = "kcal")
             Text(
                 text = "千焦耳：${"%.0f".format(kj)} kJ",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, color = AppleColors.AmberGold),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, color = AppColors.AmberGold),
             )
         }
     }
@@ -431,7 +431,7 @@ private fun BackupAndSystemTab() {
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        AppleCard {
+        AppCard {
             Text("数据导出与全量备份 (需求 26)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Text(
                 text = "全量导出包含用户档案、摄入历史、体重轨迹、自建食物与食谱。支持加密原生 JSON 或标准 CSV 格式。",
@@ -442,12 +442,12 @@ private fun BackupAndSystemTab() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                AppleButton(
+                AppButton(
                     text = "导出原生 JSON 备份",
                     onClick = { exportStatus = "已生成 litebalance_backup_2026.json (包含主库所有记录)" },
                     modifier = Modifier.weight(1f),
                 )
-                AppleButton(
+                AppButton(
                     text = "导出 CSV 表格",
                     onClick = { exportStatus = "已导出 intakes_and_weights.csv" },
                     modifier = Modifier.weight(1f),
@@ -456,28 +456,28 @@ private fun BackupAndSystemTab() {
             }
 
             if (exportStatus.isNotBlank()) {
-                Text(text = exportStatus, style = MaterialTheme.typography.labelSmall.copy(color = AppleColors.MintGreen))
+                Text(text = exportStatus, style = MaterialTheme.typography.labelSmall.copy(color = AppColors.MintGreen))
             }
         }
 
-        AppleCard {
+        AppCard {
             Text("数据导入与恢复 (需求 27)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Text(
                 text = "支持从旧版备份文件或外部 CSV 无损恢复数据，自动执行主键去重与数据结构校验。",
                 style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
             )
-            AppleButton(
+            AppButton(
                 text = "选择 JSON/CSV 文件导入",
                 onClick = { exportStatus = "模拟导入成功：校验通过，未发现冲突记录" },
                 outlined = true,
-                color = AppleColors.IrisPurple,
+                color = AppColors.IrisPurple,
             )
         }
 
-        AppleCard {
+        AppCard {
             Text("离线参考食物库状态 (需求 28)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Text("内置 NASEM 2023 临床参考食物种子库，FTS5 全文检索引擎就绪。", style = MaterialTheme.typography.bodySmall)
-            CapsuleBadge(text = "种子库就绪 (Seed Ready)", color = AppleColors.MintGreen)
+            CapsuleBadge(text = "种子库就绪 (Seed Ready)", color = AppColors.MintGreen)
         }
     }
 }

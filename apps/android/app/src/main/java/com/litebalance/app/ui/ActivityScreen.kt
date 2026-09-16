@@ -50,13 +50,13 @@ import com.litebalance.app.CoreSession
 import com.litebalance.app.model.ActivityItem
 import com.litebalance.app.model.AppStateManager
 import com.litebalance.app.model.FastingProtocol
-import com.litebalance.app.ui.components.AppleButton
-import com.litebalance.app.ui.components.AppleCard
-import com.litebalance.app.ui.components.AppleMetricItem
-import com.litebalance.app.ui.components.AppleSegmentedControl
-import com.litebalance.app.ui.components.AppleTextField
+import com.litebalance.app.ui.components.AppButton
+import com.litebalance.app.ui.components.AppCard
+import com.litebalance.app.ui.components.MetricItem
+import com.litebalance.app.ui.components.SegmentedControl
+import com.litebalance.app.ui.components.AppTextField
 import com.litebalance.app.ui.components.CapsuleBadge
-import com.litebalance.app.ui.theme.AppleColors
+import com.litebalance.app.ui.theme.AppColors
 import com.litebalance.app.ui.theme.LiquidGlassTokens
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -107,10 +107,10 @@ fun ActivityScreen() {
                     ),
                 )
             }
-            CapsuleBadge(text = "Pontzer 2026", color = AppleColors.MintGreen)
+            CapsuleBadge(text = "Pontzer 2026", color = AppColors.MintGreen)
         }
 
-        AppleSegmentedControl(
+        SegmentedControl(
             items = tabs,
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
@@ -140,7 +140,7 @@ private fun FastingTab() {
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        AppleCard(customGlowBrush = LiquidGlassTokens.AmberLiquidGlow) {
+        AppCard(customGlowBrush = LiquidGlassTokens.AmberLiquidGlow) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -158,11 +158,11 @@ private fun FastingTab() {
                 }
                 CapsuleBadge(
                     text = if (session.isRunning) "断食进行中" else "未开始",
-                    color = if (session.isRunning) AppleColors.AmberGold else AppleColors.SlatePebble,
+                    color = if (session.isRunning) AppColors.AmberGold else AppColors.SlatePebble,
                 )
             }
 
-            // 苹果风格环形断食呼吸进度
+            // 断食进度
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -174,8 +174,8 @@ private fun FastingTab() {
                         progress = { session.progressPct() },
                         modifier = Modifier.size(190.dp),
                         strokeWidth = 14.dp,
-                        color = AppleColors.AmberGold,
-                        trackColor = AppleColors.AmberGoldSoft,
+                        color = AppColors.AmberGold,
+                        trackColor = AppColors.AmberGoldSoft,
                     )
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -187,7 +187,7 @@ private fun FastingTab() {
                             text = "%02d:%02d".format(hours, mins),
                             style = MaterialTheme.typography.displayLarge.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = AppleColors.AmberGold,
+                                color = AppColors.AmberGold,
                             ),
                         )
                         Text(
@@ -211,32 +211,32 @@ private fun FastingTab() {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (!session.isRunning) {
-                    AppleButton(
+                    AppButton(
                         text = "开启断食计时",
                         onClick = { AppStateManager.startFasting(FastingProtocol.F16_8) },
                         modifier = Modifier.fillMaxWidth(),
-                        color = AppleColors.AmberGold,
+                        color = AppColors.AmberGold,
                     )
                 } else {
-                    AppleButton(
+                    AppButton(
                         text = "完成 / 结束断食",
                         onClick = { AppStateManager.stopFasting() },
                         modifier = Modifier.weight(1f),
-                        color = AppleColors.MintGreen,
+                        color = AppColors.MintGreen,
                     )
-                    AppleButton(
+                    AppButton(
                         text = "取消",
                         onClick = { AppStateManager.stopFasting() },
                         modifier = Modifier.weight(1f),
                         outlined = true,
-                        color = AppleColors.VitalityCoral,
+                        color = AppColors.VitalityCoral,
                     )
                 }
             }
         }
 
         // 协议选择卡片
-        AppleCard {
+        AppCard {
             Text("断食协议选择", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             FastingProtocol.entries.forEach { proto ->
                 val isSel = session.protocol == proto
@@ -244,7 +244,7 @@ private fun FastingTab() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (isSel) AppleColors.AmberGoldSoft else MaterialTheme.colorScheme.surfaceVariant)
+                        .background(if (isSel) AppColors.AmberGoldSoft else MaterialTheme.colorScheme.surfaceVariant)
                         .clickable { AppStateManager.startFasting(proto) }
                         .padding(12.dp),
                 ) {
@@ -254,7 +254,7 @@ private fun FastingTab() {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(text = proto.label, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                        if (isSel) CapsuleBadge(text = "使用中", color = AppleColors.AmberGold)
+                        if (isSel) CapsuleBadge(text = "使用中", color = AppColors.AmberGold)
                     }
                 }
             }
@@ -275,7 +275,7 @@ private fun WorkoutAndCompensationTab() {
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        AppleCard {
+        AppCard {
             Text(
                 text = "Pontzer-Trexler 2026 运动代偿感知天平",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -295,23 +295,23 @@ private fun WorkoutAndCompensationTab() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                AppleMetricItem(
+                MetricItem(
                     label = "名义毛消耗 (手表显示)",
                     value = "%.0f".format(nominal),
                     unit = "kcal",
                     accentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                AppleMetricItem(
+                MetricItem(
                     label = "Pontzer 真实净计入",
                     value = "%.0f".format(net),
                     unit = "kcal",
-                    accentColor = AppleColors.MintGreen,
+                    accentColor = AppColors.MintGreen,
                 )
-                AppleMetricItem(
+                MetricItem(
                     label = "代偿挤压阻尼",
                     value = "-$compPct",
                     unit = "%",
-                    accentColor = AppleColors.VitalityCoral,
+                    accentColor = AppColors.VitalityCoral,
                 )
             }
 
@@ -321,14 +321,14 @@ private fun WorkoutAndCompensationTab() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    AppleTextField(
+                    AppTextField(
                         value = durationMinutes,
                         onValueChange = { durationMinutes = it },
                         label = "运动时长 (分钟)",
                         trailingText = "min",
                     )
                 }
-                AppleButton(
+                AppButton(
                     text = "打卡记入闭环",
                     onClick = {
                         AppStateManager.logWorkout(act, dur, currentUser.weightKg)
@@ -352,7 +352,7 @@ private fun WorkoutAndCompensationTab() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(if (isSel) AppleColors.MintGreenSoft else MaterialTheme.colorScheme.surface)
+                        .background(if (isSel) AppColors.MintGreenSoft else MaterialTheme.colorScheme.surface)
                         .clickable { selectedAct = item }
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                 ) {
@@ -368,7 +368,7 @@ private fun WorkoutAndCompensationTab() {
                                 style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                             )
                         }
-                        CapsuleBadge(text = "选择", color = AppleColors.MintGreen)
+                        CapsuleBadge(text = "选择", color = AppColors.MintGreen)
                     }
                 }
             }
@@ -411,7 +411,7 @@ private fun WeightHistoryTab() {
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        AppleCard {
+        AppCard {
             Text(
                 text = "记录今日体重与体脂",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -422,14 +422,14 @@ private fun WeightHistoryTab() {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    AppleTextField(value = inputWeight, onValueChange = { inputWeight = it }, label = "体重 (kg)", trailingText = "kg")
+                    AppTextField(value = inputWeight, onValueChange = { inputWeight = it }, label = "体重 (kg)", trailingText = "kg")
                 }
                 Box(modifier = Modifier.weight(1f)) {
-                    AppleTextField(value = inputBodyFat, onValueChange = { inputBodyFat = it }, label = "体脂率 (%)", trailingText = "%")
+                    AppTextField(value = inputBodyFat, onValueChange = { inputBodyFat = it }, label = "体脂率 (%)", trailingText = "%")
                 }
             }
 
-            AppleButton(
+            AppButton(
                 text = "打卡保存体重记录",
                 onClick = {
                     scope.launch {
@@ -454,7 +454,7 @@ private fun WeightHistoryTab() {
             )
 
             if (statusText.isNotBlank()) {
-                Text(text = statusText, style = MaterialTheme.typography.labelSmall.copy(color = AppleColors.MintGreen))
+                Text(text = statusText, style = MaterialTheme.typography.labelSmall.copy(color = AppColors.MintGreen))
             }
         }
 
@@ -468,7 +468,7 @@ private fun WeightHistoryTab() {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(historyPoints) { pt ->
-                AppleCard(contentPadding = 12.dp) {
+                AppCard(contentPadding = 12.dp) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -478,7 +478,7 @@ private fun WeightHistoryTab() {
                             Text(text = pt.date, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
                             Text(
                                 text = "体重 ${"%.2f".format(pt.weightKg)} kg",
-                                style = MaterialTheme.typography.labelMedium.copy(color = AppleColors.VitalityCoral, fontWeight = FontWeight.Bold),
+                                style = MaterialTheme.typography.labelMedium.copy(color = AppColors.VitalityCoral, fontWeight = FontWeight.Bold),
                             )
                         }
                     }

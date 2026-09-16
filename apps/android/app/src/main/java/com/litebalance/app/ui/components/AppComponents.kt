@@ -49,18 +49,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.litebalance.app.ui.theme.AppleColors
+import com.litebalance.app.ui.theme.AppColors
 import com.litebalance.app.ui.theme.LiquidGlassTokens
 
-/**
- * 苹果 iPhone「液态玻璃 (Liquid Glass)」卡片
- * 具备三大物理级光学特征：
- * 1. 晶润微透光材质底色 (Translucent Fluid Body)
- * 2. 边缘顶部折射镜面高光 (Specular Ridge Light)
- * 3. 柔和有机漫晕 (Organic Ambient Soft Shadow)
- */
 @Composable
-fun AppleCard(
+fun AppCard(
     modifier: Modifier = Modifier,
     customGlowBrush: Brush? = null,
     backgroundColor: Color? = null,
@@ -71,7 +64,6 @@ fun AppleCard(
     val isDark = isSystemInDarkTheme()
     val shape = RoundedCornerShape(24.dp)
 
-    // 镜面折射光渐变边框：顶部强反射白光，底部微弱消散
     val specularBorder = if (isDark) LiquidGlassTokens.DarkBorder else LiquidGlassTokens.LightBorder
 
     val cardModifier = if (onClick != null) {
@@ -85,7 +77,6 @@ fun AppleCard(
     Box(
         modifier = cardModifier
             .fillMaxWidth()
-            // 苹果液态玻璃极柔漫晕
             .shadow(
                 elevation = 6.dp,
                 shape = shape,
@@ -102,7 +93,6 @@ fun AppleCard(
                     LiquidGlassTokens.LightBody
                 },
             )
-            // 边缘全反射高光
             .border(width = 1.dp, brush = specularBorder, shape = shape)
             .padding(contentPadding),
     ) {
@@ -116,12 +106,8 @@ fun AppleCard(
 
 object ColumnScopeWrapper
 
-/**
- * 苹果 iPhone 液态玻璃活动闭环 (Liquid Activity Rings)
- * 模拟高饱和度流体光柱闭环，具有晶莹透光的环槽底色。
- */
 @Composable
-fun AppleActivityRings(
+fun ActivityRings(
     modifier: Modifier = Modifier,
     intakeProgress: Float,
     exerciseProgress: Float,
@@ -156,9 +142,9 @@ fun AppleActivityRings(
 
             // 1. 外环：活力桃红 (热量摄入)
             val r1 = (this.size.width - strokePx) / 2
-            // 晶透水润凹槽
+
             drawCircle(
-                color = AppleColors.VitalityCoral.copy(alpha = 0.16f),
+                color = AppColors.VitalityCoral.copy(alpha = 0.16f),
                 radius = r1,
                 center = centerOffset,
                 style = Stroke(width = strokePx),
@@ -167,8 +153,8 @@ fun AppleActivityRings(
             drawArc(
                 brush = Brush.sweepGradient(
                     listOf(
-                        AppleColors.VitalityCoral.copy(alpha = 0.85f),
-                        AppleColors.VitalityCoral,
+                        AppColors.VitalityCoral.copy(alpha = 0.85f),
+                        AppColors.VitalityCoral,
                     ),
                     center = centerOffset,
                 ),
@@ -184,7 +170,7 @@ fun AppleActivityRings(
             val r2 = r1 - strokePx - gapPx
             if (r2 > 0) {
                 drawCircle(
-                    color = AppleColors.MintGreen.copy(alpha = 0.16f),
+                    color = AppColors.MintGreen.copy(alpha = 0.16f),
                     radius = r2,
                     center = centerOffset,
                     style = Stroke(width = strokePx),
@@ -192,8 +178,8 @@ fun AppleActivityRings(
                 drawArc(
                     brush = Brush.sweepGradient(
                         listOf(
-                            AppleColors.MintGreen.copy(alpha = 0.85f),
-                            AppleColors.MintGreen,
+                            AppColors.MintGreen.copy(alpha = 0.85f),
+                            AppColors.MintGreen,
                         ),
                         center = centerOffset,
                     ),
@@ -210,7 +196,7 @@ fun AppleActivityRings(
             val r3 = r2 - strokePx - gapPx
             if (r3 > 0) {
                 drawCircle(
-                    color = AppleColors.CalmIndigo.copy(alpha = 0.16f),
+                    color = AppColors.CalmIndigo.copy(alpha = 0.16f),
                     radius = r3,
                     center = centerOffset,
                     style = Stroke(width = strokePx),
@@ -218,8 +204,8 @@ fun AppleActivityRings(
                 drawArc(
                     brush = Brush.sweepGradient(
                         listOf(
-                            AppleColors.CalmIndigo.copy(alpha = 0.85f),
-                            AppleColors.CalmIndigo,
+                            AppColors.CalmIndigo.copy(alpha = 0.85f),
+                            AppColors.CalmIndigo,
                         ),
                         center = centerOffset,
                     ),
@@ -235,14 +221,11 @@ fun AppleActivityRings(
     }
 }
 
-/**
- * 苹果 iPhone 液态玻璃水滴徽章 (Liquid Glass Capsule Badge)
- */
 @Composable
 fun CapsuleBadge(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = AppleColors.MintGreen,
+    color: Color = AppColors.MintGreen,
     backgroundColor: Color = color.copy(alpha = 0.12f),
 ) {
     Box(
@@ -280,11 +263,8 @@ fun CapsuleBadge(
     }
 }
 
-/**
- * 苹果 iPhone 液态玻璃药丸分段选择器 (Liquid Segmented Control)
- */
 @Composable
-fun AppleSegmentedControl(
+fun SegmentedControl(
     items: List<String>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
@@ -297,7 +277,6 @@ fun AppleSegmentedControl(
         modifier = modifier
             .fillMaxWidth()
             .clip(troughShape)
-            // 半透明流体凹槽
             .background(
                 if (isDark) Color(0x66242730) else Color(0x33E2E8F0),
             )
@@ -331,7 +310,6 @@ fun AppleSegmentedControl(
                     .then(
                         if (isSelected) {
                             Modifier
-                                // 液态玻璃悬浮药丸：纯白微光 + 顶部镜面反光
                                 .shadow(4.dp, pillShape, ambientColor = Color(0x1A000000))
                                 .background(
                                     Brush.verticalGradient(
@@ -390,11 +368,11 @@ fun AiInsightCard(
     val shape = RoundedCornerShape(24.dp)
     val fluidBorder = Brush.sweepGradient(
         listOf(
-            AppleColors.IrisPurple.copy(alpha = 0.65f),
-            AppleColors.VitalityCoral.copy(alpha = 0.5f),
-            AppleColors.AmberGold.copy(alpha = 0.45f),
-            AppleColors.CalmIndigo.copy(alpha = 0.5f),
-            AppleColors.IrisPurple.copy(alpha = 0.65f),
+            AppColors.IrisPurple.copy(alpha = 0.65f),
+            AppColors.VitalityCoral.copy(alpha = 0.5f),
+            AppColors.AmberGold.copy(alpha = 0.45f),
+            AppColors.CalmIndigo.copy(alpha = 0.5f),
+            AppColors.IrisPurple.copy(alpha = 0.65f),
         ),
     )
 
@@ -404,16 +382,16 @@ fun AiInsightCard(
             .shadow(
                 elevation = 8.dp,
                 shape = shape,
-                ambientColor = AppleColors.IrisPurple.copy(alpha = 0.18f),
-                spotColor = AppleColors.VitalityCoral.copy(alpha = 0.12f),
+                ambientColor = AppColors.IrisPurple.copy(alpha = 0.18f),
+                spotColor = AppColors.VitalityCoral.copy(alpha = 0.12f),
             )
             .clip(shape)
-            // 半透明水润晶晶紫
+
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        AppleColors.IrisPurpleSoft.copy(alpha = 0.82f),
-                        AppleColors.SurfaceLight.copy(alpha = 0.95f),
+                        AppColors.IrisPurpleSoft.copy(alpha = 0.82f),
+                        AppColors.SurfaceLight.copy(alpha = 0.95f),
                     ),
                 ),
             )
@@ -434,8 +412,8 @@ fun AiInsightCard(
                         .background(
                             Brush.radialGradient(
                                 listOf(
-                                    AppleColors.IrisPurple.copy(alpha = 0.28f),
-                                    AppleColors.IrisPurple.copy(alpha = 0.08f),
+                                    AppColors.IrisPurple.copy(alpha = 0.28f),
+                                    AppColors.IrisPurple.copy(alpha = 0.08f),
                                 ),
                             ),
                         )
@@ -444,7 +422,7 @@ fun AiInsightCard(
                             Brush.verticalGradient(
                                 listOf(
                                     Color.White.copy(alpha = 0.8f),
-                                    AppleColors.IrisPurple.copy(alpha = 0.3f),
+                                    AppColors.IrisPurple.copy(alpha = 0.3f),
                                 ),
                             ),
                             CircleShape,
@@ -454,7 +432,7 @@ fun AiInsightCard(
                     Icon(
                         imageVector = Icons.Rounded.AutoAwesome,
                         contentDescription = badgeText,
-                        tint = AppleColors.IrisPurple,
+                        tint = AppColors.IrisPurple,
                         modifier = Modifier.size(16.dp),
                     )
                 }
@@ -468,8 +446,8 @@ fun AiInsightCard(
                 Spacer(modifier = Modifier.weight(1f))
                 CapsuleBadge(
                     text = badgeText,
-                    color = AppleColors.IrisPurple,
-                    backgroundColor = AppleColors.IrisPurple.copy(alpha = 0.15f),
+                    color = AppColors.IrisPurple,
+                    backgroundColor = AppColors.IrisPurple.copy(alpha = 0.15f),
                 )
             }
 
@@ -490,7 +468,7 @@ fun AiInsightCard(
                     Text(
                         text = actionLabel,
                         style = MaterialTheme.typography.labelLarge.copy(
-                            color = AppleColors.IrisPurple,
+                            color = AppColors.IrisPurple,
                             fontWeight = FontWeight.Bold,
                         ),
                         modifier = Modifier
@@ -504,11 +482,8 @@ fun AiInsightCard(
     }
 }
 
-/**
- * 苹果 iPhone 经典数据指标元 (Apple Metric Cell)
- */
 @Composable
-fun AppleMetricItem(
+fun MetricItem(
     label: String,
     value: String,
     unit: String = "",
@@ -559,11 +534,8 @@ fun AppleMetricItem(
     }
 }
 
-/**
- * 苹果 iPhone 液态晶透输入框 (Liquid TextField)
- */
 @Composable
-fun AppleTextField(
+fun AppTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -596,7 +568,7 @@ fun AppleTextField(
         colors = TextFieldDefaults.colors(
             focusedContainerColor = if (isDark) Color(0x55252830) else Color(0xD9FFFFFF),
             unfocusedContainerColor = if (isDark) Color(0x33252830) else Color(0x99F1F3F6),
-            focusedIndicatorColor = AppleColors.VitalityCoral,
+            focusedIndicatorColor = AppColors.VitalityCoral,
             unfocusedIndicatorColor = Color(0x22CBD5E1),
         ),
         modifier = modifier
@@ -614,15 +586,12 @@ fun AppleTextField(
     )
 }
 
-/**
- * 苹果 iPhone 液态水滴胶囊按钮 (Liquid Pill Button)
- */
 @Composable
-fun AppleButton(
+fun AppButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    color: Color = AppleColors.VitalityCoral,
+    color: Color = AppColors.VitalityCoral,
     textColor: Color = Color.White,
     outlined: Boolean = false,
 ) {
@@ -661,7 +630,6 @@ fun AppleButton(
             )
         }
     } else {
-        // 实心水滴液态按钮：顶部微高光折射 + 饱满有机色泽
         Box(
             modifier = modifier
                 .shadow(

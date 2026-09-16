@@ -15,17 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * 苹果 iPhone「液态玻璃 (Liquid Glass)」设计语言
- * 汲取 iOS 18 与 Apple 晶透流体材质灵感：
- * - 饱满晶透感 (Luminous Translucency)
- * - 顶部边缘折射高光 (Specular Top Highlight)
- * - 漫反射柔晕 (Soft Ambient Glow)
- * - 水滴有机温润感，坚决摒弃冷冰冰的科技感
- */
-object AppleColors {
-    // 背景与表面基调
-    val CanvasLight = Color(0xFFF6F7F9)        // 浅暖晨雾背景，接近 iOS 系统
+/** 应用配色。 */
+object AppColors {
+    val CanvasLight = Color(0xFFF6F7F9)
     val SurfaceLight = Color(0xFFFFFFFF)
     val SurfaceSubtleLight = Color(0xFFF1F3F6)
     val BorderLight = Color(0xFFE4E7EB)
@@ -44,8 +36,7 @@ object AppleColors {
     val LabelSecondaryDark = Color(0xFF9CA3AF)
     val LabelTertiaryDark = Color(0xFF6B7280)
 
-    // 经典 Apple Health 功能代表色 (温和、高识别度、人文感)
-    val VitalityCoral = Color(0xFFFF453A)      // 活力桃红 / 能量与活动闭环
+    val VitalityCoral = Color(0xFFFF453A)
     val VitalityCoralSoft = Color(0xFFFFECEB)
     val VitalityCoralGlass = Color(0x33FF453A)
 
@@ -61,35 +52,29 @@ object AppleColors {
     val CalmIndigoSoft = Color(0xFFEAF4FF)
     val CalmIndigoGlass = Color(0x33007AFF)
 
-    val IrisPurple = Color(0xFFAF52DE)         // 柔和鸢尾紫 / 代谢仿真与AI洞察
+    val IrisPurple = Color(0xFFAF52DE)
     val IrisPurpleSoft = Color(0xFFF7ECFC)
     val IrisPurpleGlass = Color(0x33AF52DE)
 
     val SlatePebble = Color(0xFF8E8E93)
 }
 
-/**
- * 苹果 iPhone 液态玻璃 (Liquid Glass) 材质系统
- */
 object LiquidGlassTokens {
-    // 浅色模式液态玻璃底色渐变 (微通透、晶润高光)
     val LightBody = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFAFFFFFF), // 顶部微光更透亮
-            Color(0xEEF8FAFC), // 底部微温润
+            Color(0xFAFFFFFF),
+            Color(0xEEF8FAFC),
         ),
     )
 
-    // 浅色模式液态玻璃高光反射边线 (上方强反射，下方弱漫射)
     val LightBorder = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFFFFFFFF),       // 顶部镜面反光 (Specular Ridge)
-            Color(0x66E2E8F0),       // 中段过渡
-            Color(0x22CBD5E1),       // 底部弱消散
+            Color(0xFFFFFFFF),
+            Color(0x66E2E8F0),
+            Color(0x22CBD5E1),
         ),
     )
 
-    // 浅色模式微光水滴背景 (用于微件与高亮卡片)
     val CoralLiquidGlow = Brush.verticalGradient(
         colors = listOf(
             Color(0x24FF453A),
@@ -118,7 +103,6 @@ object LiquidGlassTokens {
         ),
     )
 
-    // 深色模式液态黑曜玻璃
     val DarkBody = Brush.verticalGradient(
         colors = listOf(
             Color(0xD9252830),
@@ -135,15 +119,15 @@ object LiquidGlassTokens {
     )
 }
 
-val AppleShapes = Shapes(
+val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(10.dp),
     small = RoundedCornerShape(14.dp),
     medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(26.dp),        // 苹果液态玻璃标志性大圆角
+    large = RoundedCornerShape(26.dp),
     extraLarge = RoundedCornerShape(34.dp),
 )
 
-val AppleTypography = Typography(
+val AppTypography = Typography(
     displayLarge = TextStyle(
         fontWeight = FontWeight.Bold,
         fontSize = 34.sp,
@@ -206,42 +190,42 @@ val AppleTypography = Typography(
     ),
 )
 
-private val AppleLightScheme = lightColorScheme(
-    primary = AppleColors.VitalityCoral,
+private val LightColorScheme = lightColorScheme(
+    primary = AppColors.VitalityCoral,
     onPrimary = Color.White,
-    primaryContainer = AppleColors.VitalityCoralSoft,
-    onPrimaryContainer = AppleColors.VitalityCoral,
-    secondary = AppleColors.MintGreen,
+    primaryContainer = AppColors.VitalityCoralSoft,
+    onPrimaryContainer = AppColors.VitalityCoral,
+    secondary = AppColors.MintGreen,
     onSecondary = Color.White,
-    secondaryContainer = AppleColors.MintGreenSoft,
-    onSecondaryContainer = AppleColors.MintGreen,
-    tertiary = AppleColors.AmberGold,
-    background = AppleColors.CanvasLight,
-    onBackground = AppleColors.LabelPrimaryLight,
-    surface = AppleColors.SurfaceLight,
-    onSurface = AppleColors.LabelPrimaryLight,
-    surfaceVariant = AppleColors.SurfaceSubtleLight,
-    onSurfaceVariant = AppleColors.LabelSecondaryLight,
-    outline = AppleColors.BorderLight,
+    secondaryContainer = AppColors.MintGreenSoft,
+    onSecondaryContainer = AppColors.MintGreen,
+    tertiary = AppColors.AmberGold,
+    background = AppColors.CanvasLight,
+    onBackground = AppColors.LabelPrimaryLight,
+    surface = AppColors.SurfaceLight,
+    onSurface = AppColors.LabelPrimaryLight,
+    surfaceVariant = AppColors.SurfaceSubtleLight,
+    onSurfaceVariant = AppColors.LabelSecondaryLight,
+    outline = AppColors.BorderLight,
 )
 
-private val AppleDarkScheme = darkColorScheme(
-    primary = AppleColors.VitalityCoral,
+private val DarkColorScheme = darkColorScheme(
+    primary = AppColors.VitalityCoral,
     onPrimary = Color.White,
     primaryContainer = Color(0xFF3F1918),
     onPrimaryContainer = Color(0xFFFFB4AB),
-    secondary = AppleColors.MintGreen,
+    secondary = AppColors.MintGreen,
     onSecondary = Color.White,
     secondaryContainer = Color(0xFF12381A),
     onSecondaryContainer = Color(0xFF90F7A6),
-    tertiary = AppleColors.AmberGold,
-    background = AppleColors.CanvasDark,
-    onBackground = AppleColors.LabelPrimaryDark,
-    surface = AppleColors.SurfaceDark,
-    onSurface = AppleColors.LabelPrimaryDark,
-    surfaceVariant = AppleColors.SurfaceSubtleDark,
-    onSurfaceVariant = AppleColors.LabelSecondaryDark,
-    outline = AppleColors.BorderDark,
+    tertiary = AppColors.AmberGold,
+    background = AppColors.CanvasDark,
+    onBackground = AppColors.LabelPrimaryDark,
+    surface = AppColors.SurfaceDark,
+    onSurface = AppColors.LabelPrimaryDark,
+    surfaceVariant = AppColors.SurfaceSubtleDark,
+    onSurfaceVariant = AppColors.LabelSecondaryDark,
+    outline = AppColors.BorderDark,
 )
 
 @Composable
@@ -249,11 +233,11 @@ fun ThemeLiteBalance(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) AppleDarkScheme else AppleLightScheme
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     MaterialTheme(
         colorScheme = colorScheme,
-        shapes = AppleShapes,
-        typography = AppleTypography,
+        shapes = AppShapes,
+        typography = AppTypography,
         content = content,
     )
 }

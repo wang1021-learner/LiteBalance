@@ -52,11 +52,11 @@ import com.litebalance.app.CoreSession
 import com.litebalance.app.ai.AiHealthAssistant
 import com.litebalance.app.model.AppStateManager
 import com.litebalance.app.ui.components.AiInsightCard
-import com.litebalance.app.ui.components.AppleActivityRings
-import com.litebalance.app.ui.components.AppleCard
-import com.litebalance.app.ui.components.AppleMetricItem
+import com.litebalance.app.ui.components.ActivityRings
+import com.litebalance.app.ui.components.AppCard
+import com.litebalance.app.ui.components.MetricItem
 import com.litebalance.app.ui.components.CapsuleBadge
-import com.litebalance.app.ui.theme.AppleColors
+import com.litebalance.app.ui.theme.AppColors
 import com.litebalance.app.ui.theme.LiquidGlassTokens
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -67,7 +67,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * 今日仪表盘 (Apple Health 今日闭环与能量天平)
+ * 今日仪表盘。
  */
 @Composable
 fun DashboardScreen() {
@@ -151,7 +151,7 @@ fun DashboardScreen() {
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // 1. 顶部 Apple Health 风格大标题与日期栏
+        // 顶部标题与日期
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -178,8 +178,8 @@ fun DashboardScreen() {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 CapsuleBadge(
                     text = currentUser.name,
-                    color = AppleColors.MintGreen,
-                    backgroundColor = AppleColors.MintGreenSoft,
+                    color = AppColors.MintGreen,
+                    backgroundColor = AppColors.MintGreenSoft,
                 )
                 IconButton(
                     onClick = { loadTodayData() },
@@ -198,8 +198,8 @@ fun DashboardScreen() {
             }
         }
 
-        // 2. 苹果标志性三色活动闭环主卡片 (Activity Rings & Energy Balance)
-        AppleCard(customGlowBrush = LiquidGlassTokens.CoralLiquidGlow) {
+        // 活动闭环与能量天平
+        AppCard(customGlowBrush = LiquidGlassTokens.CoralLiquidGlow) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -214,22 +214,22 @@ fun DashboardScreen() {
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     )
 
-                    AppleMetricItem(
+                    MetricItem(
                         label = "饮食摄入",
                         value = "%.0f".format(totalIntakeKcal),
                         unit = "kcal",
                         sublabel = "基准维持 %.0f kcal".format(baseTdeeKcal),
-                        accentColor = AppleColors.VitalityCoral,
+                        accentColor = AppColors.VitalityCoral,
                     )
 
-                    AppleMetricItem(
+                    MetricItem(
                         label = "运动净计入",
                         value = "%.0f".format(netExerciseKcal),
                         unit = "kcal",
                         sublabel = if (nominalExerciseKcal > netExerciseKcal) {
                             "名义 %.0f (代偿 -%.0f)".format(nominalExerciseKcal, nominalExerciseKcal - netExerciseKcal)
                         } else null,
-                        accentColor = AppleColors.MintGreen,
+                        accentColor = AppColors.MintGreen,
                     )
                 }
 
@@ -238,7 +238,7 @@ fun DashboardScreen() {
                 val exerciseRatio = (netExerciseKcal / 400.0).toFloat()
                 val waterRatio = (waterProgressPct / 100.0).toFloat()
 
-                AppleActivityRings(
+                ActivityRings(
                     intakeProgress = intakeRatio,
                     exerciseProgress = exerciseRatio,
                     waterProgress = waterRatio,
@@ -255,7 +255,7 @@ fun DashboardScreen() {
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(
-                        if (netEnergyDiff <= 0) AppleColors.MintGreenSoft else AppleColors.VitalityCoralSoft,
+                        if (netEnergyDiff <= 0) AppColors.MintGreenSoft else AppColors.VitalityCoralSoft,
                     )
                     .padding(horizontal = 14.dp, vertical = 10.dp),
             ) {
@@ -272,14 +272,14 @@ fun DashboardScreen() {
                             text = if (netEnergyDiff <= 0) "当前处于热量缺口" else "当前处于热量盈余",
                             style = MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (netEnergyDiff <= 0) AppleColors.MintGreen else AppleColors.VitalityCoral,
+                                color = if (netEnergyDiff <= 0) AppColors.MintGreen else AppColors.VitalityCoral,
                             ),
                         )
                         if (AppStateManager.dayBoundaryMinutes > 0u) {
                             CapsuleBadge(
                                 text = "日界线 04:00",
-                                color = AppleColors.AmberGold,
-                                backgroundColor = AppleColors.AmberGoldSoft,
+                                color = AppColors.AmberGold,
+                                backgroundColor = AppColors.AmberGoldSoft,
                             )
                         }
                     }
@@ -288,7 +288,7 @@ fun DashboardScreen() {
                         text = "${if (netEnergyDiff > 0) "+" else ""}${"%.0f".format(netEnergyDiff)} kcal",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            color = if (netEnergyDiff <= 0) AppleColors.MintGreen else AppleColors.VitalityCoral,
+                            color = if (netEnergyDiff <= 0) AppColors.MintGreen else AppColors.VitalityCoral,
                         ),
                     )
                 }
@@ -303,8 +303,8 @@ fun DashboardScreen() {
         )
 
         currentUser.energyPlanningBlockReason()?.let { reason ->
-            AppleCard {
-                CapsuleBadge(text = "能量规划已禁用", color = AppleColors.VitalityCoral)
+            AppCard {
+                CapsuleBadge(text = "能量规划已禁用", color = AppColors.VitalityCoral)
                 Text(
                     text = reason,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -323,7 +323,7 @@ fun DashboardScreen() {
         )
 
         // 4. 三大宏量营养素分布卡片 (Macronutrients Tracker)
-        AppleCard(customGlowBrush = LiquidGlassTokens.MintLiquidGlow) {
+        AppCard(customGlowBrush = LiquidGlassTokens.MintLiquidGlow) {
             Text(
                 text = "宏量营养素摄入",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -335,27 +335,27 @@ fun DashboardScreen() {
                     label = "蛋白质 (Protein)",
                     currentG = proteinG,
                     targetG = 130.0,
-                    color = AppleColors.MintGreen,
+                    color = AppColors.MintGreen,
                 )
                 // 碳水
                 MacroProgressRow(
                     label = "慢碳水 (Carbs)",
                     currentG = carbsG,
                     targetG = 180.0,
-                    color = AppleColors.AmberGold,
+                    color = AppColors.AmberGold,
                 )
                 // 脂肪
                 MacroProgressRow(
                     label = "优质脂肪 (Fat)",
                     currentG = fatG,
                     targetG = 55.0,
-                    color = AppleColors.IrisPurple,
+                    color = AppColors.IrisPurple,
                 )
             }
         }
 
         // 5. 饮水与补水微件卡片
-        AppleCard(customGlowBrush = LiquidGlassTokens.IndigoLiquidGlow) {
+        AppCard(customGlowBrush = LiquidGlassTokens.IndigoLiquidGlow) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -369,13 +369,13 @@ fun DashboardScreen() {
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(AppleColors.CalmIndigoSoft),
+                            .background(AppColors.CalmIndigoSoft),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.LocalDrink,
                             contentDescription = "饮水",
-                            tint = AppleColors.CalmIndigo,
+                            tint = AppColors.CalmIndigo,
                             modifier = Modifier.size(22.dp),
                         )
                     }
@@ -398,7 +398,7 @@ fun DashboardScreen() {
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(AppleColors.CalmIndigoSoft)
+                        .background(AppColors.CalmIndigoSoft)
                         .clickable {
                             scope.launch {
                                 runCatching {
@@ -422,13 +422,13 @@ fun DashboardScreen() {
                         Icon(
                             imageVector = Icons.Rounded.Add,
                             contentDescription = "记水",
-                            tint = AppleColors.CalmIndigo,
+                            tint = AppColors.CalmIndigo,
                             modifier = Modifier.size(16.dp),
                         )
                         Text(
                             text = "+250ml",
                             style = MaterialTheme.typography.labelMedium.copy(
-                                color = AppleColors.CalmIndigo,
+                                color = AppColors.CalmIndigo,
                                 fontWeight = FontWeight.Bold,
                             ),
                         )
@@ -442,8 +442,8 @@ fun DashboardScreen() {
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(CircleShape),
-                color = AppleColors.CalmIndigo,
-                trackColor = AppleColors.CalmIndigoSoft,
+                color = AppColors.CalmIndigo,
+                trackColor = AppColors.CalmIndigoSoft,
             )
         }
 

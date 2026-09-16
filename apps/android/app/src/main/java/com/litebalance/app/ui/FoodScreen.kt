@@ -52,12 +52,12 @@ import com.litebalance.app.ai.AiIntakeSuggestion
 import com.litebalance.app.model.AppStateManager
 import com.litebalance.app.model.CustomFoodItem
 import com.litebalance.app.ui.components.AiInsightCard
-import com.litebalance.app.ui.components.AppleButton
-import com.litebalance.app.ui.components.AppleCard
-import com.litebalance.app.ui.components.AppleSegmentedControl
-import com.litebalance.app.ui.components.AppleTextField
+import com.litebalance.app.ui.components.AppButton
+import com.litebalance.app.ui.components.AppCard
+import com.litebalance.app.ui.components.SegmentedControl
+import com.litebalance.app.ui.components.AppTextField
 import com.litebalance.app.ui.components.CapsuleBadge
-import com.litebalance.app.ui.theme.AppleColors
+import com.litebalance.app.ui.theme.AppColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -136,13 +136,13 @@ fun FoodScreen() {
 
             CapsuleBadge(
                 text = "今日 ${"%.0f".format(todayTotalKcal)} kcal",
-                color = AppleColors.VitalityCoral,
-                backgroundColor = AppleColors.VitalityCoralSoft,
+                color = AppColors.VitalityCoral,
+                backgroundColor = AppColors.VitalityCoralSoft,
             )
         }
 
-        // 2. iOS 风格分段选择器
-        AppleSegmentedControl(
+        // 分段选择器
+        SegmentedControl(
             items = tabs,
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
@@ -182,7 +182,7 @@ fun FoodScreen() {
         if (statusFeedback.isNotBlank()) {
             Text(
                 text = statusFeedback,
-                style = MaterialTheme.typography.labelSmall.copy(color = AppleColors.MintGreen),
+                style = MaterialTheme.typography.labelSmall.copy(color = AppColors.MintGreen),
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
@@ -243,14 +243,14 @@ private fun SearchAndLogTab(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(modifier = Modifier.weight(1f)) {
-                AppleTextField(
+                AppTextField(
                     value = query,
                     onValueChange = { query = it },
                     label = "搜索食物 (离线 FTS5 全文索引)",
                     placeholder = "例如：鸡胸肉、燕麦、糙米饭",
                 )
             }
-            AppleButton(
+            AppButton(
                 text = if (isSearching) "…" else "搜索",
                 onClick = { doSearch() },
                 modifier = Modifier.height(48.dp),
@@ -260,7 +260,7 @@ private fun SearchAndLogTab(
         // 搜索结果或当前选中食物卡片
         if (selectedFood != null) {
             val food = selectedFood!!
-            AppleCard(backgroundColor = AppleColors.MintGreenSoft.copy(alpha = 0.5f)) {
+            AppCard(backgroundColor = AppColors.MintGreenSoft.copy(alpha = 0.5f)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -276,7 +276,7 @@ private fun SearchAndLogTab(
                             style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                         )
                     }
-                    CapsuleBadge(text = "已选定", color = AppleColors.MintGreen)
+                    CapsuleBadge(text = "已选定", color = AppColors.MintGreen)
                 }
 
                 Row(
@@ -285,7 +285,7 @@ private fun SearchAndLogTab(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
-                        AppleTextField(
+                        AppTextField(
                             value = amountG,
                             onValueChange = { amountG = it },
                             label = "摄入克数 (g)",
@@ -301,7 +301,7 @@ private fun SearchAndLogTab(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(if (active) AppleColors.VitalityCoral else MaterialTheme.colorScheme.surfaceVariant)
+                                    .background(if (active) AppColors.VitalityCoral else MaterialTheme.colorScheme.surfaceVariant)
                                     .clickable { selectedMeal = key }
                                     .padding(horizontal = 8.dp, vertical = 8.dp),
                             ) {
@@ -329,10 +329,10 @@ private fun SearchAndLogTab(
                         text = "预计能量：${"%.0f".format(calculatedKcal)} kcal",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold,
-                            color = AppleColors.VitalityCoral,
+                            color = AppColors.VitalityCoral,
                         ),
                     )
-                    AppleButton(
+                    AppButton(
                         text = "记入打卡",
                         onClick = {
                             scope.launch {
@@ -372,7 +372,7 @@ private fun SearchAndLogTab(
                     )
                 }
                 items(todayIntakes) { log ->
-                    AppleCard(contentPadding = 12.dp) {
+                    AppCard(contentPadding = 12.dp) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -392,7 +392,7 @@ private fun SearchAndLogTab(
                                 Icon(
                                     imageVector = Icons.Rounded.DeleteOutline,
                                     contentDescription = "删除",
-                                    tint = AppleColors.VitalityCoral,
+                                    tint = AppColors.VitalityCoral,
                                 )
                             }
                         }
@@ -429,7 +429,7 @@ private fun SearchAndLogTab(
                                 style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                             )
                         }
-                        CapsuleBadge(text = "选择", color = AppleColors.CalmIndigo)
+                        CapsuleBadge(text = "选择", color = AppColors.CalmIndigo)
                     }
                 }
             }
@@ -476,7 +476,7 @@ private fun AiNaturalIntakeTab(onLoggedSuccess: () -> Unit) {
             badgeText = "演示规则",
         )
 
-        AppleTextField(
+        AppTextField(
             value = aiInputPrompt,
             onValueChange = { aiInputPrompt = it },
             label = "输入您吃了什么",
@@ -489,7 +489,7 @@ private fun AiNaturalIntakeTab(onLoggedSuccess: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            AppleButton(
+            AppButton(
                 text = if (isAnalyzing) "规则匹配中…" else "按演示规则解析",
                 onClick = { runAiAnalysis() },
             )
@@ -500,7 +500,7 @@ private fun AiNaturalIntakeTab(onLoggedSuccess: () -> Unit) {
                     text = "合计：${"%.0f".format(totalKcal)} kcal",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = AppleColors.VitalityCoral,
+                        color = AppColors.VitalityCoral,
                     ),
                 )
             }
@@ -511,7 +511,7 @@ private fun AiNaturalIntakeTab(onLoggedSuccess: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(suggestions) { item ->
-                AppleCard {
+                AppCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -525,7 +525,7 @@ private fun AiNaturalIntakeTab(onLoggedSuccess: () -> Unit) {
                             Text(
                                 text = "预估份量 ${"%.0f".format(item.amountG)}g · 能量 ${"%.0f".format(item.energyKcal)} kcal",
                                 style = MaterialTheme.typography.labelMedium.copy(
-                                    color = AppleColors.VitalityCoral,
+                                    color = AppColors.VitalityCoral,
                                     fontWeight = FontWeight.SemiBold,
                                 ),
                             )
@@ -535,7 +535,7 @@ private fun AiNaturalIntakeTab(onLoggedSuccess: () -> Unit) {
                             )
                             Text(
                                 text = item.note,
-                                style = MaterialTheme.typography.labelSmall.copy(color = AppleColors.MintGreen),
+                                style = MaterialTheme.typography.labelSmall.copy(color = AppColors.MintGreen),
                             )
                         }
                     }
@@ -544,7 +544,7 @@ private fun AiNaturalIntakeTab(onLoggedSuccess: () -> Unit) {
         }
 
         if (suggestions.isNotEmpty()) {
-            AppleButton(
+            AppButton(
                 text = "一键将演示拆解录入今日午餐",
                 onClick = {
                     scope.launch {
@@ -589,7 +589,7 @@ private fun BarcodeAndOffTab() {
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        AppleCard {
+        AppCard {
             Text(
                 text = "GS1 条码识别与外部食品库",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -599,7 +599,7 @@ private fun BarcodeAndOffTab() {
                 style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
             )
 
-            AppleTextField(
+            AppTextField(
                 value = barcodeInput,
                 onValueChange = { barcodeInput = it },
                 label = "条形码编号",
@@ -611,7 +611,7 @@ private fun BarcodeAndOffTab() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AppleButton(
+                AppButton(
                     text = "模拟扫码检索",
                     onClick = {
                         isChecking = true
@@ -619,7 +619,7 @@ private fun BarcodeAndOffTab() {
                         isChecking = false
                     },
                 )
-                CapsuleBadge(text = "防封限速保护", color = AppleColors.MintGreen)
+                CapsuleBadge(text = "防封限速保护", color = AppColors.MintGreen)
             }
 
             if (validationResult.isNotBlank()) {
@@ -639,7 +639,7 @@ private fun BarcodeAndOffTab() {
         }
 
         // 缓存库管理 (需求 10 & 29)
-        AppleCard {
+        AppCard {
             Text(
                 text = "外部食品独立网络缓存 (food_cache.db)",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -655,11 +655,11 @@ private fun BarcodeAndOffTab() {
                 text = "按 ODbL 协议物理分库隔离，永不污染本地核心用户库。30 天过期自动失效。",
                 style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
             )
-            AppleButton(
+            AppButton(
                 text = "驱逐过期并清空网络缓存",
                 onClick = { AppStateManager.clearFoodCache() },
                 outlined = true,
-                color = AppleColors.VitalityCoral,
+                color = AppColors.VitalityCoral,
             )
         }
     }
@@ -685,7 +685,7 @@ private fun CustomFoodAndRecipeTab() {
                 text = "本地自建食物与聚合食谱",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             )
-            CapsuleBadge(text = "双基准归一化", color = AppleColors.AmberGold)
+            CapsuleBadge(text = "双基准归一化", color = AppColors.AmberGold)
         }
 
         LazyColumn(
@@ -696,7 +696,7 @@ private fun CustomFoodAndRecipeTab() {
                 Text("自建单品库", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
             }
             items(AppStateManager.customFoods) { item ->
-                AppleCard {
+                AppCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -708,11 +708,11 @@ private fun CustomFoodAndRecipeTab() {
                                 style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                             )
                         }
-                        CapsuleBadge(text = "零污染微量", color = AppleColors.MintGreen)
+                        CapsuleBadge(text = "零污染微量", color = AppColors.MintGreen)
                     }
                     Text(
                         text = "P ${item.proteinG}g / C ${item.carbsG}g / F ${item.fatG}g",
-                        style = MaterialTheme.typography.labelSmall.copy(color = AppleColors.VitalityCoral),
+                        style = MaterialTheme.typography.labelSmall.copy(color = AppColors.VitalityCoral),
                     )
                 }
             }
@@ -722,12 +722,12 @@ private fun CustomFoodAndRecipeTab() {
                 Text("复合烹饪食谱", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
             }
             items(AppStateManager.customRecipes) { r ->
-                AppleCard(backgroundColor = AppleColors.MintGreenSoft.copy(alpha = 0.35f)) {
+                AppCard(backgroundColor = AppColors.MintGreenSoft.copy(alpha = 0.35f)) {
                     Text(text = r.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     Text(text = r.description, style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
                     Text(
                         text = "总重 ${"%.0f".format(r.totalWeightG)}g · 总能 ${"%.0f".format(r.totalEnergyKcal)} kcal (P ${"%.0f".format(r.totalProteinG)}g / C ${"%.0f".format(r.totalCarbsG)}g / F ${"%.0f".format(r.totalFatG)}g)",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, color = AppleColors.MintGreen),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, color = AppColors.MintGreen),
                     )
                     Text(
                         text = "原料清单：" + r.ingredients.joinToString(" · "),

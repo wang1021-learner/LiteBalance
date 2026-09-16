@@ -19,7 +19,7 @@ data class AiIntakeSuggestion(
 /**
  * 本地关键词 / 模板文案助手。
  *
- * **不是**大模型，也不是 Apple Intelligence。仅用于 UI 演示交互；
+ * **不是**大模型。仅用于 UI 演示交互；
  * 营养数值为硬编码示例，不可当作临床或精确计量依据。
  */
 object AiHealthAssistant {

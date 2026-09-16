@@ -40,13 +40,13 @@ import com.litebalance.app.CoreSession
 import com.litebalance.app.ai.AiHealthAssistant
 import com.litebalance.app.model.AppStateManager
 import com.litebalance.app.ui.components.AiInsightCard
-import com.litebalance.app.ui.components.AppleButton
-import com.litebalance.app.ui.components.AppleCard
-import com.litebalance.app.ui.components.AppleMetricItem
-import com.litebalance.app.ui.components.AppleSegmentedControl
-import com.litebalance.app.ui.components.AppleTextField
+import com.litebalance.app.ui.components.AppButton
+import com.litebalance.app.ui.components.AppCard
+import com.litebalance.app.ui.components.MetricItem
+import com.litebalance.app.ui.components.SegmentedControl
+import com.litebalance.app.ui.components.AppTextField
 import com.litebalance.app.ui.components.CapsuleBadge
-import com.litebalance.app.ui.theme.AppleColors
+import com.litebalance.app.ui.theme.AppColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -176,12 +176,12 @@ fun PlanScreen() {
                     ),
                 )
             }
-            CapsuleBadge(text = "NIH & NASEM", color = AppleColors.IrisPurple)
+            CapsuleBadge(text = "NIH & NASEM", color = AppColors.IrisPurple)
         }
 
         blockReason?.let { reason ->
-            AppleCard {
-                CapsuleBadge(text = "已禁用热量计算", color = AppleColors.VitalityCoral)
+            AppCard {
+                CapsuleBadge(text = "已禁用热量计算", color = AppColors.VitalityCoral)
                 Text(
                     text = reason,
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -199,7 +199,7 @@ fun PlanScreen() {
         }
 
         // 2. 分段选择器
-        AppleSegmentedControl(
+        SegmentedControl(
             items = tabs,
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
@@ -256,7 +256,7 @@ private fun AdaptiveBudgetTab(
 
     // 核心卡片：预算大字与安全底线指示
     if (budget != null) {
-        AppleCard {
+        AppCard {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -274,7 +274,7 @@ private fun AdaptiveBudgetTab(
                 }
                 CapsuleBadge(
                     text = if (budget.safetyFloorTriggered) "安全红线已触发" else "良性赤字",
-                    color = if (budget.safetyFloorTriggered) AppleColors.VitalityCoral else AppleColors.MintGreen,
+                    color = if (budget.safetyFloorTriggered) AppColors.VitalityCoral else AppColors.MintGreen,
                 )
             }
 
@@ -283,23 +283,23 @@ private fun AdaptiveBudgetTab(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom,
             ) {
-                AppleMetricItem(
+                MetricItem(
                     label = "推荐每日预算",
                     value = "%.0f".format(budget.dailyBudgetKcal),
                     unit = "kcal",
-                    accentColor = AppleColors.VitalityCoral,
+                    accentColor = AppColors.VitalityCoral,
                 )
-                AppleMetricItem(
+                MetricItem(
                     label = "基准维持 TDEE",
                     value = "%.0f".format(budget.baseTdeeKcal),
                     unit = "kcal",
                     accentColor = MaterialTheme.colorScheme.onSurface,
                 )
-                AppleMetricItem(
+                MetricItem(
                     label = "内分泌安全底线",
                     value = "%.0f".format(budget.safetyFloorKcal),
                     unit = "kcal",
-                    accentColor = AppleColors.AmberGold,
+                    accentColor = AppColors.AmberGold,
                 )
             }
 
@@ -342,7 +342,7 @@ private fun AdaptiveBudgetTab(
     }
 
     // 目标与算法设置卡片
-    AppleCard {
+    AppCard {
         Text(
             text = "体态目标与自适应参数",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -353,7 +353,7 @@ private fun AdaptiveBudgetTab(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Box(modifier = Modifier.weight(1f)) {
-                AppleTextField(
+                AppTextField(
                     value = targetWeight,
                     onValueChange = onTargetWeightChange,
                     label = "目标体重 (kg)",
@@ -361,7 +361,7 @@ private fun AdaptiveBudgetTab(
                 )
             }
             Box(modifier = Modifier.weight(1f)) {
-                AppleTextField(
+                AppTextField(
                     value = weeklyRate,
                     onValueChange = onWeeklyRateChange,
                     label = "每周速率 (kg/周)",
@@ -382,7 +382,7 @@ private fun AdaptiveBudgetTab(
             Switch(
                 checked = taper,
                 onCheckedChange = onTaperChange,
-                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AppleColors.MintGreen),
+                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AppColors.MintGreen),
             )
         }
 
@@ -398,11 +398,11 @@ private fun AdaptiveBudgetTab(
             Switch(
                 checked = adaptive,
                 onCheckedChange = onAdaptiveChange,
-                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AppleColors.MintGreen),
+                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AppColors.MintGreen),
             )
         }
 
-        AppleButton(
+        AppButton(
             text = if (isCalculating) "正在重新求解…" else "更新目标并重新计算预算",
             onClick = onRefresh,
             modifier = Modifier.fillMaxWidth(),
@@ -411,7 +411,7 @@ private fun AdaptiveBudgetTab(
 
     // TDEE 模型对比卡片 (需求 4)
     if (tdee != null) {
-        AppleCard {
+        AppCard {
             Text(
                 text = "TDEE 临床模型比对 (NASEM 2023 vs IOM 2005)",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -420,14 +420,14 @@ private fun AdaptiveBudgetTab(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                AppleMetricItem(
+                MetricItem(
                     label = "NASEM 2023 (新标准)",
                     value = "%.0f".format(tdee.nasem2023Kcal),
                     unit = "kcal",
                     sublabel = "8分组多项式矩阵",
-                    accentColor = AppleColors.MintGreen,
+                    accentColor = AppColors.MintGreen,
                 )
-                AppleMetricItem(
+                MetricItem(
                     label = "IOM 2005 (旧标准)",
                     value = "%.0f".format(tdee.iom2005Kcal),
                     unit = "kcal",
@@ -457,7 +457,7 @@ private fun KevinHallPlanTab(
     isCalculating: Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        AppleCard {
+        AppCard {
             Text(
                 text = "NIH Kevin Hall 动态体重演化模型",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -472,14 +472,14 @@ private fun KevinHallPlanTab(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    AppleTextField(value = targetWeight, onValueChange = onTargetWeightChange, label = "目标体重 (kg)")
+                    AppTextField(value = targetWeight, onValueChange = onTargetWeightChange, label = "目标体重 (kg)")
                 }
                 Box(modifier = Modifier.weight(1f)) {
-                    AppleTextField(value = weeks, onValueChange = onWeeksChange, label = "规划周期 (周)")
+                    AppTextField(value = weeks, onValueChange = onWeeksChange, label = "规划周期 (周)")
                 }
             }
 
-            AppleButton(
+            AppButton(
                 text = if (isCalculating) "微分方程求解中…" else "启动 Kevin Hall 动态仿真",
                 onClick = onRefresh,
                 modifier = Modifier.fillMaxWidth(),
@@ -487,7 +487,7 @@ private fun KevinHallPlanTab(
         }
 
         if (plan != null) {
-            AppleCard(backgroundColor = AppleColors.MintGreenSoft.copy(alpha = 0.4f)) {
+            AppCard(backgroundColor = AppColors.MintGreenSoft.copy(alpha = 0.4f)) {
                 Text(
                     text = "微分仿真预测结果",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -497,23 +497,23 @@ private fun KevinHallPlanTab(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    AppleMetricItem(
+                    MetricItem(
                         label = "期末预测体重",
                         value = "%.2f".format(plan.finalWeightKg),
                         unit = "kg",
-                        accentColor = AppleColors.VitalityCoral,
+                        accentColor = AppColors.VitalityCoral,
                     )
-                    AppleMetricItem(
+                    MetricItem(
                         label = "脂肪量变化",
                         value = "%.2f".format(plan.fatMassChangeKg),
                         unit = "kg",
-                        accentColor = AppleColors.AmberGold,
+                        accentColor = AppColors.AmberGold,
                     )
-                    AppleMetricItem(
+                    MetricItem(
                         label = "瘦体重变化",
                         value = "%.2f".format(plan.fatFreeMassChangeKg),
                         unit = "kg",
-                        accentColor = AppleColors.MintGreen,
+                        accentColor = AppColors.MintGreen,
                     )
                 }
 
@@ -541,13 +541,13 @@ private fun MacroProtocolsTab() {
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         protocols.forEach { (name, ratio, desc) ->
-            AppleCard {
+            AppCard {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(text = name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    CapsuleBadge(text = ratio, color = AppleColors.CalmIndigo)
+                    CapsuleBadge(text = ratio, color = AppColors.CalmIndigo)
                 }
                 Text(text = desc, style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
             }
