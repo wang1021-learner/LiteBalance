@@ -750,6 +750,48 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -777,21 +819,55 @@ internal interface UniffiLib : Library {
     ): Pointer
     fun uniffi_litebalance_core_fn_constructor_litebalancesession_open_in_memory(uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
+    fun uniffi_litebalance_core_fn_method_litebalancesession_cache_stats(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_cancel_fasting(`ptr`: Pointer,`sessionId`: RustBuffer.ByValue,`cancelledAt`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_litebalance_core_fn_method_litebalancesession_clear_food_cache(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    fun uniffi_litebalance_core_fn_method_litebalancesession_complete_fasting(`ptr`: Pointer,`sessionId`: RustBuffer.ByValue,`completedAt`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_litebalance_core_fn_method_litebalancesession_compute_budget(`ptr`: Pointer,`input`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_compute_plan(`ptr`: Pointer,`input`: RustBuffer.ByValue,`targetWeightKg`: Double,`weeks`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_compute_tdee(`ptr`: Pointer,`input`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_convert_units(`ptr`: Pointer,`kg`: Double,`cm`: Double,`kcal`: Double,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_create_custom_food(`ptr`: Pointer,`input`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_daily_summary(`ptr`: Pointer,`userId`: RustBuffer.ByValue,`date`: RustBuffer.ByValue,`boundaryMinutes`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_daily_water(`ptr`: Pointer,`userId`: RustBuffer.ByValue,`date`: RustBuffer.ByValue,`goalMl`: Int,`profileForTarget`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_delete_custom_food(`ptr`: Pointer,`foodId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
     fun uniffi_litebalance_core_fn_method_litebalancesession_delete_intake(`ptr`: Pointer,`userId`: RustBuffer.ByValue,`intakeId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    fun uniffi_litebalance_core_fn_method_litebalancesession_delete_workout(`ptr`: Pointer,`userId`: RustBuffer.ByValue,`workoutId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    fun uniffi_litebalance_core_fn_method_litebalancesession_energy_balance(`ptr`: Pointer,`input`: RustBuffer.ByValue,`date`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_evaluate_dri(`ptr`: Pointer,`input`: RustBuffer.ByValue,`date`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_export_backup_json(`ptr`: Pointer,`userId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_fasting_status(`ptr`: Pointer,`userId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_get_goal(`ptr`: Pointer,`userId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_get_user(`ptr`: Pointer,`userId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_import_backup_json(`ptr`: Pointer,`json`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_list_activity_catalog(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_list_custom_foods(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_list_users(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_list_workouts(`ptr`: Pointer,`userId`: RustBuffer.ByValue,`date`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_log_food(`ptr`: Pointer,`userId`: RustBuffer.ByValue,`foodId`: RustBuffer.ByValue,`amountG`: Double,`mealType`: RustBuffer.ByValue,`consumedAt`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -799,10 +875,18 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_log_weight(`ptr`: Pointer,`userId`: RustBuffer.ByValue,`weightKg`: Double,`bodyFatPct`: RustBuffer.ByValue,`loggedAt`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_log_workout(`ptr`: Pointer,`input`: RustBuffer.ByValue,`activityCode`: RustBuffer.ByValue,`durationMin`: Double,`date`: RustBuffer.ByValue,`nutritionState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_lookup_barcode(`ptr`: Pointer,`barcode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_litebalance_core_fn_method_litebalancesession_period_report(`ptr`: Pointer,`input`: RustBuffer.ByValue,`startDate`: RustBuffer.ByValue,`endDate`: RustBuffer.ByValue,`periodDays`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_search_foods(`ptr`: Pointer,`query`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_set_goal(`ptr`: Pointer,`userId`: RustBuffer.ByValue,`goal`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_litebalance_core_fn_method_litebalancesession_start_fasting(`ptr`: Pointer,`userId`: RustBuffer.ByValue,`protocol`: RustBuffer.ByValue,`startedAt`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_litebalance_core_fn_method_litebalancesession_upsert_user(`ptr`: Pointer,`input`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_litebalance_core_fn_method_litebalancesession_water_target(`ptr`: Pointer,`input`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -921,21 +1005,55 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_litebalance_core_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_cache_stats(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_cancel_fasting(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_clear_food_cache(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_complete_fasting(
+    ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_compute_budget(
     ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_compute_plan(
     ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_compute_tdee(
     ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_convert_units(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_create_custom_food(
+    ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_daily_summary(
     ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_daily_water(
     ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_delete_custom_food(
+    ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_delete_intake(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_delete_workout(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_energy_balance(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_evaluate_dri(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_export_backup_json(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_fasting_status(
     ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_get_goal(
     ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_get_user(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_import_backup_json(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_list_activity_catalog(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_list_custom_foods(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_list_users(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_list_workouts(
     ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_log_food(
     ): Short
@@ -943,9 +1061,17 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_log_weight(
     ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_log_workout(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_lookup_barcode(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_period_report(
+    ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_search_foods(
     ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_set_goal(
+    ): Short
+    fun uniffi_litebalance_core_checksum_method_litebalancesession_start_fasting(
     ): Short
     fun uniffi_litebalance_core_checksum_method_litebalancesession_upsert_user(
     ): Short
@@ -974,6 +1100,18 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_cache_stats() != 51456.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_cancel_fasting() != 211.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_clear_food_cache() != 62730.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_complete_fasting() != 21498.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_compute_budget() != 30074.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -983,19 +1121,58 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_compute_tdee() != 12507.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_convert_units() != 40655.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_create_custom_food() != 39021.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_daily_summary() != 20663.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_daily_water() != 65530.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_delete_custom_food() != 580.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_delete_intake() != 24212.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_delete_workout() != 3707.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_energy_balance() != 25291.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_evaluate_dri() != 35066.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_export_backup_json() != 31211.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_fasting_status() != 10921.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_get_goal() != 23612.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_get_user() != 46746.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_import_backup_json() != 1629.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_list_activity_catalog() != 766.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_list_custom_foods() != 64286.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_list_users() != 2980.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_list_workouts() != 11599.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_log_food() != 13626.toShort()) {
@@ -1007,10 +1184,22 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_log_weight() != 25810.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_log_workout() != 39479.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_lookup_barcode() != 7552.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_period_report() != 23275.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_search_foods() != 28182.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_set_goal() != 33287.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_start_fasting() != 27255.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_litebalance_core_checksum_method_litebalancesession_upsert_user() != 56805.toShort()) {
@@ -1118,6 +1307,29 @@ public object FfiConverterUInt: FfiConverter<UInt, Int> {
 
     override fun write(value: UInt, buf: ByteBuffer) {
         buf.putInt(value.toInt())
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterLong: FfiConverter<Long, Long> {
+    override fun lift(value: Long): Long {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Long {
+        return buf.getLong()
+    }
+
+    override fun lower(value: Long): Long {
+        return value
+    }
+
+    override fun allocationSize(value: Long) = 8UL
+
+    override fun write(value: Long, buf: ByteBuffer) {
+        buf.putLong(value)
     }
 }
 
@@ -1391,6 +1603,14 @@ private class JavaLangRefCleanable(
  */
 public interface LiteBalanceSessionInterface {
     
+    fun `cacheStats`(): FfiCacheStats
+    
+    fun `cancelFasting`(`sessionId`: kotlin.String, `cancelledAt`: kotlin.String)
+    
+    fun `clearFoodCache`(): kotlin.UInt
+    
+    fun `completeFasting`(`sessionId`: kotlin.String, `completedAt`: kotlin.String)
+    
     /**
      * 基于档案 + 已存目标 + 近期体重，计算自适应预算。
      */
@@ -1406,6 +1626,10 @@ public interface LiteBalanceSessionInterface {
      */
     fun `computeTdee`(`input`: FfiUserInput): FfiEnergyComparison
     
+    fun `convertUnits`(`kg`: kotlin.Double, `cm`: kotlin.Double, `kcal`: kotlin.Double): FfiUnitConversion
+    
+    fun `createCustomFood`(`input`: FfiCustomFoodInput): FfiFoodItem
+    
     /**
      * 日汇总。`boundary_minutes`：生理日界线距午夜的分钟数（0 表示自然日）。
      */
@@ -1416,10 +1640,22 @@ public interface LiteBalanceSessionInterface {
      */
     fun `dailyWater`(`userId`: kotlin.String, `date`: kotlin.String, `goalMl`: kotlin.UInt, `profileForTarget`: FfiUserInput?): FfiWaterSummary
     
+    fun `deleteCustomFood`(`foodId`: kotlin.String): kotlin.Boolean
+    
     /**
      * 删除一笔摄入。
      */
     fun `deleteIntake`(`userId`: kotlin.String, `intakeId`: kotlin.String): kotlin.Boolean
+    
+    fun `deleteWorkout`(`userId`: kotlin.String, `workoutId`: kotlin.String): kotlin.Boolean
+    
+    fun `energyBalance`(`input`: FfiUserInput, `date`: kotlin.String): FfiEnergyBalance
+    
+    fun `evaluateDri`(`input`: FfiUserInput, `date`: kotlin.String): FfiDriReport
+    
+    fun `exportBackupJson`(`userId`: kotlin.String): kotlin.String
+    
+    fun `fastingStatus`(`userId`: kotlin.String): FfiFastingStatus
     
     /**
      * 读取当前目标；无则 `None`。
@@ -1430,6 +1666,16 @@ public interface LiteBalanceSessionInterface {
      * 读取用户档案；不存在返回 `None`。
      */
     fun `getUser`(`userId`: kotlin.String): FfiUserProfile?
+    
+    fun `importBackupJson`(`json`: kotlin.String): kotlin.String
+    
+    fun `listActivityCatalog`(): List<FfiActivityCatalogItem>
+    
+    fun `listCustomFoods`(): List<FfiFoodItem>
+    
+    fun `listUsers`(): List<FfiUserProfile>
+    
+    fun `listWorkouts`(`userId`: kotlin.String, `date`: kotlin.String): List<FfiWorkoutLog>
     
     /**
      * 记录饮食摄入。`meal_type`: breakfast/lunch/dinner/snack；`amount` 为克。
@@ -1446,6 +1692,12 @@ public interface LiteBalanceSessionInterface {
      */
     fun `logWeight`(`userId`: kotlin.String, `weightKg`: kotlin.Double, `bodyFatPct`: kotlin.Double?, `loggedAt`: kotlin.String): kotlin.String
     
+    fun `logWorkout`(`input`: FfiUserInput, `activityCode`: kotlin.String, `durationMin`: kotlin.Double, `date`: kotlin.String, `nutritionState`: kotlin.String): FfiWorkoutLog
+    
+    fun `lookupBarcode`(`barcode`: kotlin.String): FfiBarcodeFood
+    
+    fun `periodReport`(`input`: FfiUserInput, `startDate`: kotlin.String, `endDate`: kotlin.String, `periodDays`: kotlin.UInt): FfiPeriodReport
+    
     /**
      * FTS5 食物搜索。
      */
@@ -1455,6 +1707,8 @@ public interface LiteBalanceSessionInterface {
      * 设置体态目标。
      */
     fun `setGoal`(`userId`: kotlin.String, `goal`: FfiGoalInput)
+    
+    fun `startFasting`(`userId`: kotlin.String, `protocol`: kotlin.String, `startedAt`: kotlin.String): kotlin.String
     
     /**
      * 写入或更新用户档案。
@@ -1559,6 +1813,56 @@ open class LiteBalanceSession: Disposable, AutoCloseable, LiteBalanceSessionInte
     }
 
     
+    @Throws(FfiException::class)override fun `cacheStats`(): FfiCacheStats {
+            return FfiConverterTypeFfiCacheStats.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_cache_stats(
+        it, _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `cancelFasting`(`sessionId`: kotlin.String, `cancelledAt`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_cancel_fasting(
+        it, FfiConverterString.lower(`sessionId`),FfiConverterString.lower(`cancelledAt`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `clearFoodCache`(): kotlin.UInt {
+            return FfiConverterUInt.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_clear_food_cache(
+        it, _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `completeFasting`(`sessionId`: kotlin.String, `completedAt`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_complete_fasting(
+        it, FfiConverterString.lower(`sessionId`),FfiConverterString.lower(`completedAt`),_status)
+}
+    }
+    
+    
+
+    
     /**
      * 基于档案 + 已存目标 + 近期体重，计算自适应预算。
      */
@@ -1606,6 +1910,31 @@ open class LiteBalanceSession: Disposable, AutoCloseable, LiteBalanceSessionInte
     }
     
 
+    override fun `convertUnits`(`kg`: kotlin.Double, `cm`: kotlin.Double, `kcal`: kotlin.Double): FfiUnitConversion {
+            return FfiConverterTypeFfiUnitConversion.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_convert_units(
+        it, FfiConverterDouble.lower(`kg`),FfiConverterDouble.lower(`cm`),FfiConverterDouble.lower(`kcal`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `createCustomFood`(`input`: FfiCustomFoodInput): FfiFoodItem {
+            return FfiConverterTypeFfiFoodItem.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_create_custom_food(
+        it, FfiConverterTypeFfiCustomFoodInput.lower(`input`),_status)
+}
+    }
+    )
+    }
+    
+
     
     /**
      * 日汇总。`boundary_minutes`：生理日界线距午夜的分钟数（0 表示自然日）。
@@ -1639,6 +1968,19 @@ open class LiteBalanceSession: Disposable, AutoCloseable, LiteBalanceSessionInte
     
 
     
+    @Throws(FfiException::class)override fun `deleteCustomFood`(`foodId`: kotlin.String): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_delete_custom_food(
+        it, FfiConverterString.lower(`foodId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     /**
      * 删除一笔摄入。
      */
@@ -1648,6 +1990,71 @@ open class LiteBalanceSession: Disposable, AutoCloseable, LiteBalanceSessionInte
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_delete_intake(
         it, FfiConverterString.lower(`userId`),FfiConverterString.lower(`intakeId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `deleteWorkout`(`userId`: kotlin.String, `workoutId`: kotlin.String): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_delete_workout(
+        it, FfiConverterString.lower(`userId`),FfiConverterString.lower(`workoutId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `energyBalance`(`input`: FfiUserInput, `date`: kotlin.String): FfiEnergyBalance {
+            return FfiConverterTypeFfiEnergyBalance.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_energy_balance(
+        it, FfiConverterTypeFfiUserInput.lower(`input`),FfiConverterString.lower(`date`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `evaluateDri`(`input`: FfiUserInput, `date`: kotlin.String): FfiDriReport {
+            return FfiConverterTypeFfiDriReport.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_evaluate_dri(
+        it, FfiConverterTypeFfiUserInput.lower(`input`),FfiConverterString.lower(`date`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `exportBackupJson`(`userId`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_export_backup_json(
+        it, FfiConverterString.lower(`userId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `fastingStatus`(`userId`: kotlin.String): FfiFastingStatus {
+            return FfiConverterTypeFfiFastingStatus.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_fasting_status(
+        it, FfiConverterString.lower(`userId`),_status)
 }
     }
     )
@@ -1680,6 +2087,70 @@ open class LiteBalanceSession: Disposable, AutoCloseable, LiteBalanceSessionInte
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_get_user(
         it, FfiConverterString.lower(`userId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `importBackupJson`(`json`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_import_backup_json(
+        it, FfiConverterString.lower(`json`),_status)
+}
+    }
+    )
+    }
+    
+
+    override fun `listActivityCatalog`(): List<FfiActivityCatalogItem> {
+            return FfiConverterSequenceTypeFfiActivityCatalogItem.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_list_activity_catalog(
+        it, _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `listCustomFoods`(): List<FfiFoodItem> {
+            return FfiConverterSequenceTypeFfiFoodItem.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_list_custom_foods(
+        it, _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `listUsers`(): List<FfiUserProfile> {
+            return FfiConverterSequenceTypeFfiUserProfile.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_list_users(
+        it, _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `listWorkouts`(`userId`: kotlin.String, `date`: kotlin.String): List<FfiWorkoutLog> {
+            return FfiConverterSequenceTypeFfiWorkoutLog.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_list_workouts(
+        it, FfiConverterString.lower(`userId`),FfiConverterString.lower(`date`),_status)
 }
     }
     )
@@ -1735,6 +2206,45 @@ open class LiteBalanceSession: Disposable, AutoCloseable, LiteBalanceSessionInte
     
 
     
+    @Throws(FfiException::class)override fun `logWorkout`(`input`: FfiUserInput, `activityCode`: kotlin.String, `durationMin`: kotlin.Double, `date`: kotlin.String, `nutritionState`: kotlin.String): FfiWorkoutLog {
+            return FfiConverterTypeFfiWorkoutLog.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_log_workout(
+        it, FfiConverterTypeFfiUserInput.lower(`input`),FfiConverterString.lower(`activityCode`),FfiConverterDouble.lower(`durationMin`),FfiConverterString.lower(`date`),FfiConverterString.lower(`nutritionState`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `lookupBarcode`(`barcode`: kotlin.String): FfiBarcodeFood {
+            return FfiConverterTypeFfiBarcodeFood.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_lookup_barcode(
+        it, FfiConverterString.lower(`barcode`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `periodReport`(`input`: FfiUserInput, `startDate`: kotlin.String, `endDate`: kotlin.String, `periodDays`: kotlin.UInt): FfiPeriodReport {
+            return FfiConverterTypeFfiPeriodReport.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_period_report(
+        it, FfiConverterTypeFfiUserInput.lower(`input`),FfiConverterString.lower(`startDate`),FfiConverterString.lower(`endDate`),FfiConverterUInt.lower(`periodDays`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     /**
      * FTS5 食物搜索。
      */
@@ -1763,6 +2273,19 @@ open class LiteBalanceSession: Disposable, AutoCloseable, LiteBalanceSessionInte
 }
     }
     
+    
+
+    
+    @Throws(FfiException::class)override fun `startFasting`(`userId`: kotlin.String, `protocol`: kotlin.String, `startedAt`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_litebalance_core_fn_method_litebalancesession_start_fasting(
+        it, FfiConverterString.lower(`userId`),FfiConverterString.lower(`protocol`),FfiConverterString.lower(`startedAt`),_status)
+}
+    }
+    )
+    }
     
 
     
@@ -1879,6 +2402,110 @@ public object FfiConverterTypeLiteBalanceSession: FfiConverter<LiteBalanceSessio
 
 
 
+data class FfiActivityCatalogItem (
+    var `code`: kotlin.String, 
+    var `nameZh`: kotlin.String, 
+    var `category`: kotlin.String, 
+    var `metValue`: kotlin.Double, 
+    var `modality`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiActivityCatalogItem: FfiConverterRustBuffer<FfiActivityCatalogItem> {
+    override fun read(buf: ByteBuffer): FfiActivityCatalogItem {
+        return FfiActivityCatalogItem(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiActivityCatalogItem) = (
+            FfiConverterString.allocationSize(value.`code`) +
+            FfiConverterString.allocationSize(value.`nameZh`) +
+            FfiConverterString.allocationSize(value.`category`) +
+            FfiConverterDouble.allocationSize(value.`metValue`) +
+            FfiConverterString.allocationSize(value.`modality`)
+    )
+
+    override fun write(value: FfiActivityCatalogItem, buf: ByteBuffer) {
+            FfiConverterString.write(value.`code`, buf)
+            FfiConverterString.write(value.`nameZh`, buf)
+            FfiConverterString.write(value.`category`, buf)
+            FfiConverterDouble.write(value.`metValue`, buf)
+            FfiConverterString.write(value.`modality`, buf)
+    }
+}
+
+
+
+data class FfiBarcodeFood (
+    var `id`: kotlin.String, 
+    var `name`: kotlin.String, 
+    var `brand`: kotlin.String?, 
+    var `energyKcal100`: kotlin.Double, 
+    var `proteinG100`: kotlin.Double, 
+    var `carbsG100`: kotlin.Double, 
+    var `fatG100`: kotlin.Double, 
+    var `fromCache`: kotlin.Boolean, 
+    var `attribution`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiBarcodeFood: FfiConverterRustBuffer<FfiBarcodeFood> {
+    override fun read(buf: ByteBuffer): FfiBarcodeFood {
+        return FfiBarcodeFood(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiBarcodeFood) = (
+            FfiConverterString.allocationSize(value.`id`) +
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterOptionalString.allocationSize(value.`brand`) +
+            FfiConverterDouble.allocationSize(value.`energyKcal100`) +
+            FfiConverterDouble.allocationSize(value.`proteinG100`) +
+            FfiConverterDouble.allocationSize(value.`carbsG100`) +
+            FfiConverterDouble.allocationSize(value.`fatG100`) +
+            FfiConverterBoolean.allocationSize(value.`fromCache`) +
+            FfiConverterString.allocationSize(value.`attribution`)
+    )
+
+    override fun write(value: FfiBarcodeFood, buf: ByteBuffer) {
+            FfiConverterString.write(value.`id`, buf)
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterOptionalString.write(value.`brand`, buf)
+            FfiConverterDouble.write(value.`energyKcal100`, buf)
+            FfiConverterDouble.write(value.`proteinG100`, buf)
+            FfiConverterDouble.write(value.`carbsG100`, buf)
+            FfiConverterDouble.write(value.`fatG100`, buf)
+            FfiConverterBoolean.write(value.`fromCache`, buf)
+            FfiConverterString.write(value.`attribution`, buf)
+    }
+}
+
+
+
 /**
  * 自适应预算结果。
  */
@@ -1933,6 +2560,104 @@ public object FfiConverterTypeFfiBudgetResult: FfiConverterRustBuffer<FfiBudgetR
             FfiConverterDouble.write(value.`recommendedCarbsG`, buf)
             FfiConverterDouble.write(value.`recommendedFatG`, buf)
             FfiConverterSequenceString.write(value.`clinicalNotes`, buf)
+    }
+}
+
+
+
+data class FfiCacheStats (
+    var `totalEntries`: kotlin.UInt, 
+    var `activeEntries`: kotlin.UInt, 
+    var `expiredEntries`: kotlin.UInt
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiCacheStats: FfiConverterRustBuffer<FfiCacheStats> {
+    override fun read(buf: ByteBuffer): FfiCacheStats {
+        return FfiCacheStats(
+            FfiConverterUInt.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterUInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiCacheStats) = (
+            FfiConverterUInt.allocationSize(value.`totalEntries`) +
+            FfiConverterUInt.allocationSize(value.`activeEntries`) +
+            FfiConverterUInt.allocationSize(value.`expiredEntries`)
+    )
+
+    override fun write(value: FfiCacheStats, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`totalEntries`, buf)
+            FfiConverterUInt.write(value.`activeEntries`, buf)
+            FfiConverterUInt.write(value.`expiredEntries`, buf)
+    }
+}
+
+
+
+/**
+ * 自建食物写入参数（避免 UniFFI 方法参数过多触发 clippy::too_many_arguments）。
+ */
+data class FfiCustomFoodInput (
+    var `name`: kotlin.String, 
+    var `brand`: kotlin.String?, 
+    var `energyKcal`: kotlin.Double, 
+    var `proteinG`: kotlin.Double, 
+    var `carbsG`: kotlin.Double, 
+    var `fatG`: kotlin.Double, 
+    /**
+     * true = 按每 100g；false = 按一份（见 serving_amount）
+     */
+    var `per100g`: kotlin.Boolean, 
+    var `servingAmount`: kotlin.Double
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiCustomFoodInput: FfiConverterRustBuffer<FfiCustomFoodInput> {
+    override fun read(buf: ByteBuffer): FfiCustomFoodInput {
+        return FfiCustomFoodInput(
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiCustomFoodInput) = (
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterOptionalString.allocationSize(value.`brand`) +
+            FfiConverterDouble.allocationSize(value.`energyKcal`) +
+            FfiConverterDouble.allocationSize(value.`proteinG`) +
+            FfiConverterDouble.allocationSize(value.`carbsG`) +
+            FfiConverterDouble.allocationSize(value.`fatG`) +
+            FfiConverterBoolean.allocationSize(value.`per100g`) +
+            FfiConverterDouble.allocationSize(value.`servingAmount`)
+    )
+
+    override fun write(value: FfiCustomFoodInput, buf: ByteBuffer) {
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterOptionalString.write(value.`brand`, buf)
+            FfiConverterDouble.write(value.`energyKcal`, buf)
+            FfiConverterDouble.write(value.`proteinG`, buf)
+            FfiConverterDouble.write(value.`carbsG`, buf)
+            FfiConverterDouble.write(value.`fatG`, buf)
+            FfiConverterBoolean.write(value.`per100g`, buf)
+            FfiConverterDouble.write(value.`servingAmount`, buf)
     }
 }
 
@@ -1993,6 +2718,110 @@ public object FfiConverterTypeFfiDailySummary: FfiConverterRustBuffer<FfiDailySu
 
 
 
+data class FfiDriReport (
+    var `date`: kotlin.String, 
+    var `adequacyScore`: kotlin.Double, 
+    var `warnings`: List<kotlin.String>, 
+    var `nutrients`: List<FfiNutrientRow>
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiDriReport: FfiConverterRustBuffer<FfiDriReport> {
+    override fun read(buf: ByteBuffer): FfiDriReport {
+        return FfiDriReport(
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterSequenceString.read(buf),
+            FfiConverterSequenceTypeFfiNutrientRow.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiDriReport) = (
+            FfiConverterString.allocationSize(value.`date`) +
+            FfiConverterDouble.allocationSize(value.`adequacyScore`) +
+            FfiConverterSequenceString.allocationSize(value.`warnings`) +
+            FfiConverterSequenceTypeFfiNutrientRow.allocationSize(value.`nutrients`)
+    )
+
+    override fun write(value: FfiDriReport, buf: ByteBuffer) {
+            FfiConverterString.write(value.`date`, buf)
+            FfiConverterDouble.write(value.`adequacyScore`, buf)
+            FfiConverterSequenceString.write(value.`warnings`, buf)
+            FfiConverterSequenceTypeFfiNutrientRow.write(value.`nutrients`, buf)
+    }
+}
+
+
+
+data class FfiEnergyBalance (
+    var `date`: kotlin.String, 
+    var `totalIntakeKcal`: kotlin.Double, 
+    var `baseTdeeKcal`: kotlin.Double, 
+    var `grossActivityKcal`: kotlin.Double, 
+    var `netActivityKcal`: kotlin.Double, 
+    var `compensatedKcal`: kotlin.Double, 
+    var `adjustedTdeeKcal`: kotlin.Double, 
+    var `netBalanceKcal`: kotlin.Double, 
+    var `isDeficit`: kotlin.Boolean, 
+    var `diagnostic`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiEnergyBalance: FfiConverterRustBuffer<FfiEnergyBalance> {
+    override fun read(buf: ByteBuffer): FfiEnergyBalance {
+        return FfiEnergyBalance(
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiEnergyBalance) = (
+            FfiConverterString.allocationSize(value.`date`) +
+            FfiConverterDouble.allocationSize(value.`totalIntakeKcal`) +
+            FfiConverterDouble.allocationSize(value.`baseTdeeKcal`) +
+            FfiConverterDouble.allocationSize(value.`grossActivityKcal`) +
+            FfiConverterDouble.allocationSize(value.`netActivityKcal`) +
+            FfiConverterDouble.allocationSize(value.`compensatedKcal`) +
+            FfiConverterDouble.allocationSize(value.`adjustedTdeeKcal`) +
+            FfiConverterDouble.allocationSize(value.`netBalanceKcal`) +
+            FfiConverterBoolean.allocationSize(value.`isDeficit`) +
+            FfiConverterString.allocationSize(value.`diagnostic`)
+    )
+
+    override fun write(value: FfiEnergyBalance, buf: ByteBuffer) {
+            FfiConverterString.write(value.`date`, buf)
+            FfiConverterDouble.write(value.`totalIntakeKcal`, buf)
+            FfiConverterDouble.write(value.`baseTdeeKcal`, buf)
+            FfiConverterDouble.write(value.`grossActivityKcal`, buf)
+            FfiConverterDouble.write(value.`netActivityKcal`, buf)
+            FfiConverterDouble.write(value.`compensatedKcal`, buf)
+            FfiConverterDouble.write(value.`adjustedTdeeKcal`, buf)
+            FfiConverterDouble.write(value.`netBalanceKcal`, buf)
+            FfiConverterBoolean.write(value.`isDeficit`, buf)
+            FfiConverterString.write(value.`diagnostic`, buf)
+    }
+}
+
+
+
 /**
  * NASEM / IOM 能量对比。
  */
@@ -2031,6 +2860,62 @@ public object FfiConverterTypeFfiEnergyComparison: FfiConverterRustBuffer<FfiEne
             FfiConverterDouble.write(value.`iom2005Kcal`, buf)
             FfiConverterDouble.write(value.`differenceKcal`, buf)
             FfiConverterDouble.write(value.`differencePct`, buf)
+    }
+}
+
+
+
+data class FfiFastingStatus (
+    var `sessionId`: kotlin.String?, 
+    var `isRunning`: kotlin.Boolean, 
+    var `protocolLabel`: kotlin.String, 
+    var `elapsedMinutes`: kotlin.Long, 
+    var `targetMinutes`: kotlin.Long, 
+    var `remainingMinutes`: kotlin.Long, 
+    var `progressPct`: kotlin.Double, 
+    var `stateLabel`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiFastingStatus: FfiConverterRustBuffer<FfiFastingStatus> {
+    override fun read(buf: ByteBuffer): FfiFastingStatus {
+        return FfiFastingStatus(
+            FfiConverterOptionalString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiFastingStatus) = (
+            FfiConverterOptionalString.allocationSize(value.`sessionId`) +
+            FfiConverterBoolean.allocationSize(value.`isRunning`) +
+            FfiConverterString.allocationSize(value.`protocolLabel`) +
+            FfiConverterLong.allocationSize(value.`elapsedMinutes`) +
+            FfiConverterLong.allocationSize(value.`targetMinutes`) +
+            FfiConverterLong.allocationSize(value.`remainingMinutes`) +
+            FfiConverterDouble.allocationSize(value.`progressPct`) +
+            FfiConverterString.allocationSize(value.`stateLabel`)
+    )
+
+    override fun write(value: FfiFastingStatus, buf: ByteBuffer) {
+            FfiConverterOptionalString.write(value.`sessionId`, buf)
+            FfiConverterBoolean.write(value.`isRunning`, buf)
+            FfiConverterString.write(value.`protocolLabel`, buf)
+            FfiConverterLong.write(value.`elapsedMinutes`, buf)
+            FfiConverterLong.write(value.`targetMinutes`, buf)
+            FfiConverterLong.write(value.`remainingMinutes`, buf)
+            FfiConverterDouble.write(value.`progressPct`, buf)
+            FfiConverterString.write(value.`stateLabel`, buf)
     }
 }
 
@@ -2216,6 +3101,118 @@ public object FfiConverterTypeFfiIntakeLog: FfiConverterRustBuffer<FfiIntakeLog>
 
 
 
+data class FfiNutrientRow (
+    var `name`: kotlin.String, 
+    var `amount`: kotlin.Double, 
+    var `unit`: kotlin.String, 
+    var `target`: kotlin.Double, 
+    var `coveragePct`: kotlin.Double, 
+    var `status`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiNutrientRow: FfiConverterRustBuffer<FfiNutrientRow> {
+    override fun read(buf: ByteBuffer): FfiNutrientRow {
+        return FfiNutrientRow(
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiNutrientRow) = (
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterDouble.allocationSize(value.`amount`) +
+            FfiConverterString.allocationSize(value.`unit`) +
+            FfiConverterDouble.allocationSize(value.`target`) +
+            FfiConverterDouble.allocationSize(value.`coveragePct`) +
+            FfiConverterString.allocationSize(value.`status`)
+    )
+
+    override fun write(value: FfiNutrientRow, buf: ByteBuffer) {
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterDouble.write(value.`amount`, buf)
+            FfiConverterString.write(value.`unit`, buf)
+            FfiConverterDouble.write(value.`target`, buf)
+            FfiConverterDouble.write(value.`coveragePct`, buf)
+            FfiConverterString.write(value.`status`, buf)
+    }
+}
+
+
+
+data class FfiPeriodReport (
+    var `startDate`: kotlin.String, 
+    var `endDate`: kotlin.String, 
+    var `periodDays`: kotlin.UInt, 
+    var `metabolicDivergenceKg`: kotlin.Double?, 
+    var `loggingAdherencePct`: kotlin.Double, 
+    var `proteinCompliancePct`: kotlin.Double, 
+    var `waterCompliancePct`: kotlin.Double, 
+    var `fastingCompliancePct`: kotlin.Double, 
+    var `avgIntakeKcal`: kotlin.Double, 
+    var `insights`: List<kotlin.String>
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiPeriodReport: FfiConverterRustBuffer<FfiPeriodReport> {
+    override fun read(buf: ByteBuffer): FfiPeriodReport {
+        return FfiPeriodReport(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterOptionalDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterSequenceString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiPeriodReport) = (
+            FfiConverterString.allocationSize(value.`startDate`) +
+            FfiConverterString.allocationSize(value.`endDate`) +
+            FfiConverterUInt.allocationSize(value.`periodDays`) +
+            FfiConverterOptionalDouble.allocationSize(value.`metabolicDivergenceKg`) +
+            FfiConverterDouble.allocationSize(value.`loggingAdherencePct`) +
+            FfiConverterDouble.allocationSize(value.`proteinCompliancePct`) +
+            FfiConverterDouble.allocationSize(value.`waterCompliancePct`) +
+            FfiConverterDouble.allocationSize(value.`fastingCompliancePct`) +
+            FfiConverterDouble.allocationSize(value.`avgIntakeKcal`) +
+            FfiConverterSequenceString.allocationSize(value.`insights`)
+    )
+
+    override fun write(value: FfiPeriodReport, buf: ByteBuffer) {
+            FfiConverterString.write(value.`startDate`, buf)
+            FfiConverterString.write(value.`endDate`, buf)
+            FfiConverterUInt.write(value.`periodDays`, buf)
+            FfiConverterOptionalDouble.write(value.`metabolicDivergenceKg`, buf)
+            FfiConverterDouble.write(value.`loggingAdherencePct`, buf)
+            FfiConverterDouble.write(value.`proteinCompliancePct`, buf)
+            FfiConverterDouble.write(value.`waterCompliancePct`, buf)
+            FfiConverterDouble.write(value.`fastingCompliancePct`, buf)
+            FfiConverterDouble.write(value.`avgIntakeKcal`, buf)
+            FfiConverterSequenceString.write(value.`insights`, buf)
+    }
+}
+
+
+
 /**
  * 精简减重/增重规划结果。
  */
@@ -2278,6 +3275,46 @@ public object FfiConverterTypeFfiPlanResult: FfiConverterRustBuffer<FfiPlanResul
             FfiConverterDouble.write(value.`proteinG`, buf)
             FfiConverterDouble.write(value.`carbsG`, buf)
             FfiConverterDouble.write(value.`fatG`, buf)
+    }
+}
+
+
+
+data class FfiUnitConversion (
+    var `kgLbs`: kotlin.String, 
+    var `kgStone`: kotlin.String, 
+    var `cmFtIn`: kotlin.String, 
+    var `kcalKj`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiUnitConversion: FfiConverterRustBuffer<FfiUnitConversion> {
+    override fun read(buf: ByteBuffer): FfiUnitConversion {
+        return FfiUnitConversion(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiUnitConversion) = (
+            FfiConverterString.allocationSize(value.`kgLbs`) +
+            FfiConverterString.allocationSize(value.`kgStone`) +
+            FfiConverterString.allocationSize(value.`cmFtIn`) +
+            FfiConverterString.allocationSize(value.`kcalKj`)
+    )
+
+    override fun write(value: FfiUnitConversion, buf: ByteBuffer) {
+            FfiConverterString.write(value.`kgLbs`, buf)
+            FfiConverterString.write(value.`kgStone`, buf)
+            FfiConverterString.write(value.`cmFtIn`, buf)
+            FfiConverterString.write(value.`kcalKj`, buf)
     }
 }
 
@@ -2494,6 +3531,70 @@ public object FfiConverterTypeFfiWeightPoint: FfiConverterRustBuffer<FfiWeightPo
     override fun write(value: FfiWeightPoint, buf: ByteBuffer) {
             FfiConverterString.write(value.`date`, buf)
             FfiConverterDouble.write(value.`weightKg`, buf)
+    }
+}
+
+
+
+data class FfiWorkoutLog (
+    var `id`: kotlin.String, 
+    var `activityCode`: kotlin.String, 
+    var `activityName`: kotlin.String, 
+    var `category`: kotlin.String, 
+    var `durationMin`: kotlin.Double, 
+    var `metValue`: kotlin.Double, 
+    var `grossKcal`: kotlin.Double, 
+    var `netKcal`: kotlin.Double, 
+    var `compensationPct`: kotlin.Double, 
+    var `date`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiWorkoutLog: FfiConverterRustBuffer<FfiWorkoutLog> {
+    override fun read(buf: ByteBuffer): FfiWorkoutLog {
+        return FfiWorkoutLog(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiWorkoutLog) = (
+            FfiConverterString.allocationSize(value.`id`) +
+            FfiConverterString.allocationSize(value.`activityCode`) +
+            FfiConverterString.allocationSize(value.`activityName`) +
+            FfiConverterString.allocationSize(value.`category`) +
+            FfiConverterDouble.allocationSize(value.`durationMin`) +
+            FfiConverterDouble.allocationSize(value.`metValue`) +
+            FfiConverterDouble.allocationSize(value.`grossKcal`) +
+            FfiConverterDouble.allocationSize(value.`netKcal`) +
+            FfiConverterDouble.allocationSize(value.`compensationPct`) +
+            FfiConverterString.allocationSize(value.`date`)
+    )
+
+    override fun write(value: FfiWorkoutLog, buf: ByteBuffer) {
+            FfiConverterString.write(value.`id`, buf)
+            FfiConverterString.write(value.`activityCode`, buf)
+            FfiConverterString.write(value.`activityName`, buf)
+            FfiConverterString.write(value.`category`, buf)
+            FfiConverterDouble.write(value.`durationMin`, buf)
+            FfiConverterDouble.write(value.`metValue`, buf)
+            FfiConverterDouble.write(value.`grossKcal`, buf)
+            FfiConverterDouble.write(value.`netKcal`, buf)
+            FfiConverterDouble.write(value.`compensationPct`, buf)
+            FfiConverterString.write(value.`date`, buf)
     }
 }
 
@@ -2736,6 +3837,34 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeFfiActivityCatalogItem: FfiConverterRustBuffer<List<FfiActivityCatalogItem>> {
+    override fun read(buf: ByteBuffer): List<FfiActivityCatalogItem> {
+        val len = buf.getInt()
+        return List<FfiActivityCatalogItem>(len) {
+            FfiConverterTypeFfiActivityCatalogItem.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiActivityCatalogItem>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiActivityCatalogItem.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiActivityCatalogItem>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiActivityCatalogItem.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeFfiFoodItem: FfiConverterRustBuffer<List<FfiFoodItem>> {
     override fun read(buf: ByteBuffer): List<FfiFoodItem> {
         val len = buf.getInt()
@@ -2792,6 +3921,62 @@ public object FfiConverterSequenceTypeFfiIntakeLog: FfiConverterRustBuffer<List<
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeFfiNutrientRow: FfiConverterRustBuffer<List<FfiNutrientRow>> {
+    override fun read(buf: ByteBuffer): List<FfiNutrientRow> {
+        val len = buf.getInt()
+        return List<FfiNutrientRow>(len) {
+            FfiConverterTypeFfiNutrientRow.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiNutrientRow>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiNutrientRow.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiNutrientRow>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiNutrientRow.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiUserProfile: FfiConverterRustBuffer<List<FfiUserProfile>> {
+    override fun read(buf: ByteBuffer): List<FfiUserProfile> {
+        val len = buf.getInt()
+        return List<FfiUserProfile>(len) {
+            FfiConverterTypeFfiUserProfile.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiUserProfile>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiUserProfile.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiUserProfile>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiUserProfile.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeFfiWeightPoint: FfiConverterRustBuffer<List<FfiWeightPoint>> {
     override fun read(buf: ByteBuffer): List<FfiWeightPoint> {
         val len = buf.getInt()
@@ -2810,6 +3995,34 @@ public object FfiConverterSequenceTypeFfiWeightPoint: FfiConverterRustBuffer<Lis
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeFfiWeightPoint.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiWorkoutLog: FfiConverterRustBuffer<List<FfiWorkoutLog>> {
+    override fun read(buf: ByteBuffer): List<FfiWorkoutLog> {
+        val len = buf.getInt()
+        return List<FfiWorkoutLog>(len) {
+            FfiConverterTypeFfiWorkoutLog.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiWorkoutLog>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiWorkoutLog.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiWorkoutLog>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiWorkoutLog.write(it, buf)
         }
     }
 }

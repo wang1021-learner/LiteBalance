@@ -10,16 +10,27 @@ use std::sync::Arc;
 use chrono::{Datelike, Local, NaiveDate};
 use uuid::Uuid;
 
+use crate::activity::{ActivityEnergyCalculator, DailyEnergyBalance, find_activity_by_code, get_standard_activity_catalog};
+use crate::analytics_reporting::{
+    DailyIntakeData, DailyWeightData, FastingSessionData, PeriodicAnalyticsEngine,
+};
 use crate::cache_db::CacheStorageEngine;
+use crate::custom_food::{CustomFoodDraft, CustomFoodEngine, InputBasis};
 use crate::db::StorageEngine;
 use crate::dynamic_weight::DynamicWeightPlanner;
 use crate::energy::EnergyCalc;
+use crate::export_import::ExportImportEngine;
+use crate::fasting::{FastingProtocol, FastingSession, FastingState};
 use crate::goal_profile::{GoalConfig, GoalKind, GoalProfileEngine};
 use crate::macro_engine::{DietProtocol, MacroEngine};
-use crate::records::{MealType, UserGoalRecord};
+use crate::micronutrient_eval::{DriStatus, MicronutrientEvaluator};
+use crate::records::{ActivityLogRecord, MealType, UserGoalRecord};
+use crate::remote_food_client::RemoteFoodClient;
 use crate::seed::seed_default_foods_if_empty;
+use crate::unit_system::UnitConverter;
 use crate::user::{ActivityLevel, Gender, UserProfile};
 use crate::water::WaterCalc;
+use crate::workout_compensation::NutritionState;
 
 // ---------------------------------------------------------------------------
 // 错误与 DTO
@@ -130,6 +141,20 @@ pub struct FfiFoodItem {
     pub fat_g_100: f64,
 }
 
+/// 自建食物写入参数（避免 UniFFI 方法参数过多触发 clippy::too_many_arguments）。
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiCustomFoodInput {
+    pub name: String,
+    pub brand: Option<String>,
+    pub energy_kcal: f64,
+    pub protein_g: f64,
+    pub carbs_g: f64,
+    pub fat_g: f64,
+    /// true = 按每 100g；false = 按一份（见 serving_amount）
+    pub per_100g: bool,
+    pub serving_amount: f64,
+}
+
 /// 摄入打卡结果。
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiIntakeLog {
@@ -174,6 +199,115 @@ pub struct FfiWaterSummary {
     pub remaining_ml: u32,
     pub progress_pct: f64,
     pub is_goal_reached: bool,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiActivityCatalogItem {
+    pub code: String,
+    pub name_zh: String,
+    pub category: String,
+    pub met_value: f64,
+    pub modality: String,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiWorkoutLog {
+    pub id: String,
+    pub activity_code: String,
+    pub activity_name: String,
+    pub category: String,
+    pub duration_min: f64,
+    pub met_value: f64,
+    pub gross_kcal: f64,
+    pub net_kcal: f64,
+    pub compensation_pct: f64,
+    pub date: String,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiEnergyBalance {
+    pub date: String,
+    pub total_intake_kcal: f64,
+    pub base_tdee_kcal: f64,
+    pub gross_activity_kcal: f64,
+    pub net_activity_kcal: f64,
+    pub compensated_kcal: f64,
+    pub adjusted_tdee_kcal: f64,
+    pub net_balance_kcal: f64,
+    pub is_deficit: bool,
+    pub diagnostic: String,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiFastingStatus {
+    pub session_id: Option<String>,
+    pub is_running: bool,
+    pub protocol_label: String,
+    pub elapsed_minutes: i64,
+    pub target_minutes: i64,
+    pub remaining_minutes: i64,
+    pub progress_pct: f64,
+    pub state_label: String,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiNutrientRow {
+    pub name: String,
+    pub amount: f64,
+    pub unit: String,
+    pub target: f64,
+    pub coverage_pct: f64,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiDriReport {
+    pub date: String,
+    pub adequacy_score: f64,
+    pub warnings: Vec<String>,
+    pub nutrients: Vec<FfiNutrientRow>,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiUnitConversion {
+    pub kg_lbs: String,
+    pub kg_stone: String,
+    pub cm_ft_in: String,
+    pub kcal_kj: String,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiPeriodReport {
+    pub start_date: String,
+    pub end_date: String,
+    pub period_days: u32,
+    pub metabolic_divergence_kg: Option<f64>,
+    pub logging_adherence_pct: f64,
+    pub protein_compliance_pct: f64,
+    pub water_compliance_pct: f64,
+    pub fasting_compliance_pct: f64,
+    pub avg_intake_kcal: f64,
+    pub insights: Vec<String>,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiCacheStats {
+    pub total_entries: u32,
+    pub active_entries: u32,
+    pub expired_entries: u32,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiBarcodeFood {
+    pub id: String,
+    pub name: String,
+    pub brand: Option<String>,
+    pub energy_kcal_100: f64,
+    pub protein_g_100: f64,
+    pub carbs_g_100: f64,
+    pub fat_g_100: f64,
+    pub from_cache: bool,
+    pub attribution: String,
 }
 
 // ---------------------------------------------------------------------------
@@ -535,6 +669,422 @@ impl LiteBalanceSession {
         let profile = build_profile(&input)?;
         Ok(WaterCalc::recommend_daily_target(&profile))
     }
+
+    pub fn list_activity_catalog(&self) -> Vec<FfiActivityCatalogItem> {
+        get_standard_activity_catalog()
+            .into_iter()
+            .map(|a| FfiActivityCatalogItem {
+                code: a.code.to_string(),
+                name_zh: a.name_zh.to_string(),
+                category: a.category.display_name_zh().to_string(),
+                met_value: a.met_value,
+                modality: format!("{:?}", a.modality),
+            })
+            .collect()
+    }
+
+    pub fn log_workout(
+        &self,
+        input: FfiUserInput,
+        activity_code: String,
+        duration_min: f64,
+        date: String,
+        nutrition_state: String,
+    ) -> Result<FfiWorkoutLog, FfiError> {
+        let profile = build_profile(&input)?;
+        let item = find_activity_by_code(&activity_code)
+            .ok_or_else(|| FfiError::msg(format!("未知运动编码: {}", activity_code)))?;
+        let state = parse_nutrition_state(&nutrition_state);
+        let result = ActivityEnergyCalculator::calculate_with_compensation(
+            item.met_value,
+            item.modality,
+            profile.weight_kg,
+            duration_min,
+            &profile,
+            None,
+            state,
+        );
+        let now = Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+        let record = ActivityLogRecord {
+            id: Uuid::new_v4().to_string(),
+            user_id: input.user_id.clone(),
+            activity_code: item.code.to_string(),
+            activity_name: item.name_zh.to_string(),
+            category: item.category.as_str().to_string(),
+            duration_minutes: duration_min,
+            met_value: item.met_value,
+            gross_burned_kcal: result.reported_kcal,
+            net_credited_kcal: result.credited_kcal,
+            compensation_ratio: 1.0 - result.effective_multiplier,
+            date: date.clone(),
+            created_at: now,
+            external_id: None,
+        };
+        self.storage
+            .log_activity(&record)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        Ok(workout_from_record(&record))
+    }
+
+    pub fn list_workouts(&self, user_id: String, date: String) -> Result<Vec<FfiWorkoutLog>, FfiError> {
+        let logs = self
+            .storage
+            .get_activities_for_date(&user_id, &date)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        Ok(logs.iter().map(workout_from_record).collect())
+    }
+
+    pub fn delete_workout(&self, user_id: String, workout_id: String) -> Result<bool, FfiError> {
+        self.storage
+            .delete_activity(&user_id, &workout_id)
+            .map_err(|e| FfiError::msg(e.to_string()))
+    }
+
+    pub fn energy_balance(&self, input: FfiUserInput, date: String) -> Result<FfiEnergyBalance, FfiError> {
+        let profile = build_profile(&input)?;
+        let tdee = EnergyCalc::nasem_2023(&profile).map_err(|e| FfiError::msg(e.to_string()))?;
+        let summary = self
+            .storage
+            .get_daily_summary(&input.user_id, &date)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        let (gross, net) = self
+            .storage
+            .get_daily_activity_totals(&input.user_id, &date)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        let bal = DailyEnergyBalance::compute(date, summary.total_energy_kcal, tdee, gross, net);
+        Ok(FfiEnergyBalance {
+            date: bal.date,
+            total_intake_kcal: bal.total_intake_kcal,
+            base_tdee_kcal: bal.base_tdee_kcal,
+            gross_activity_kcal: bal.gross_activity_burned_kcal,
+            net_activity_kcal: bal.net_activity_credited_kcal,
+            compensated_kcal: bal.compensated_amount_kcal,
+            adjusted_tdee_kcal: bal.adjusted_tdee_kcal,
+            net_balance_kcal: bal.net_caloric_balance_kcal,
+            is_deficit: bal.is_deficit,
+            diagnostic: bal.compensation_diagnostic,
+        })
+    }
+
+    pub fn start_fasting(&self, user_id: String, protocol: String, started_at: String) -> Result<String, FfiError> {
+        let proto = parse_fasting_protocol(&protocol);
+        self.storage
+            .start_fasting(&user_id, &started_at, proto.target_duration_minutes())
+            .map_err(|e| FfiError::msg(e.to_string()))
+    }
+
+    pub fn fasting_status(&self, user_id: String) -> Result<FfiFastingStatus, FfiError> {
+        let active = self
+            .storage
+            .get_active_fasting(&user_id)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        Ok(match active {
+            None => FfiFastingStatus {
+                session_id: None,
+                is_running: false,
+                protocol_label: "未开始".into(),
+                elapsed_minutes: 0,
+                target_minutes: 0,
+                remaining_minutes: 0,
+                progress_pct: 0.0,
+                state_label: "空闲".into(),
+            },
+            Some((id, started, target)) => {
+                let session = FastingSession {
+                    id: id.clone(),
+                    user_id,
+                    started_at: started,
+                    target_duration_minutes: target,
+                    completed_at: None,
+                    cancelled_at: None,
+                };
+                let state = session.state_at(chrono::Utc::now());
+                fasting_status_from_state(Some(id), target, &state)
+            }
+        })
+    }
+
+    pub fn complete_fasting(&self, session_id: String, completed_at: String) -> Result<(), FfiError> {
+        self.storage
+            .complete_fasting(&session_id, &completed_at)
+            .map_err(|e| FfiError::msg(e.to_string()))
+    }
+
+    pub fn cancel_fasting(&self, session_id: String, cancelled_at: String) -> Result<(), FfiError> {
+        self.storage
+            .cancel_fasting(&session_id, &cancelled_at)
+            .map_err(|e| FfiError::msg(e.to_string()))
+    }
+
+    pub fn evaluate_dri(&self, input: FfiUserInput, date: String) -> Result<FfiDriReport, FfiError> {
+        let profile = build_profile(&input)?;
+        let items = self
+            .storage
+            .get_daily_intake_nutriments(&input.user_id, &date)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        let report = MicronutrientEvaluator::evaluate_daily_intake(&date, profile.gender, profile.age as u32, &items);
+        Ok(FfiDriReport {
+            date: report.date,
+            adequacy_score: report.adequacy_score,
+            warnings: report.warnings,
+            nutrients: report
+                .assessments
+                .into_iter()
+                .map(|a| FfiNutrientRow {
+                    name: a.nutrient_name,
+                    amount: a.intake_amount,
+                    unit: a.unit,
+                    target: a.target_value,
+                    coverage_pct: a.data_coverage_pct,
+                    status: dri_status_label(&a.status),
+                })
+                .collect(),
+        })
+    }
+
+    pub fn convert_units(&self, kg: f64, cm: f64, kcal: f64) -> FfiUnitConversion {
+        let lbs = UnitConverter::kg_to_lbs(kg);
+        let (st, st_lbs) = UnitConverter::kg_to_stone_lbs(kg);
+        let (ft, inch) = UnitConverter::cm_to_feet_inches(cm);
+        let kj = UnitConverter::kcal_to_kj(kcal);
+        FfiUnitConversion {
+            kg_lbs: format!("{:.1} kg = {:.1} lb", kg, lbs),
+            kg_stone: format!("{:.1} kg = {}", kg, UnitConverter::format_stone_lbs(st, st_lbs)),
+            cm_ft_in: format!("{:.1} cm = {}", cm, UnitConverter::format_feet_inches(ft, inch)),
+            kcal_kj: format!("{:.0} kcal = {:.0} kJ", kcal, kj),
+        }
+    }
+
+    pub fn export_backup_json(&self, user_id: String) -> Result<String, FfiError> {
+        let backup = ExportImportEngine::export_native_backup(&self.storage, &user_id)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        serde_json::to_string_pretty(&backup).map_err(|e| FfiError::msg(e.to_string()))
+    }
+
+    pub fn import_backup_json(&self, json: String) -> Result<String, FfiError> {
+        let backup = serde_json::from_str(&json).map_err(|e| FfiError::msg(e.to_string()))?;
+        let stats = ExportImportEngine::import_native_backup(&self.storage, &backup)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        Ok(format!(
+            "已导入 用户{} 食物{} 摄入{} 体重{} 饮水{} 断食{} 运动{}",
+            stats.users_imported,
+            stats.foods_imported,
+            stats.intakes_imported,
+            stats.weights_imported,
+            stats.waters_imported,
+            stats.fasting_imported,
+            stats.activities_imported
+        ))
+    }
+
+    pub fn create_custom_food(&self, input: FfiCustomFoodInput) -> Result<FfiFoodItem, FfiError> {
+        let draft = CustomFoodDraft {
+            name: input.name,
+            brand: input.brand,
+            barcode: None,
+            basis: Some(if input.per_100g {
+                InputBasis::Per100g
+            } else {
+                InputBasis::PerServing {
+                    serving_amount: input.serving_amount.max(1.0),
+                    unit: "g".into(),
+                }
+            }),
+            energy_kcal: input.energy_kcal,
+            proteins_g: input.protein_g,
+            carbs_g: input.carbs_g,
+            fat_g: input.fat_g,
+            ..Default::default()
+        };
+        let normalized = CustomFoodEngine::normalize_draft(&draft).map_err(FfiError::msg)?;
+        self.storage
+            .insert_food(&normalized.food, &normalized.nutriments_100g)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        Ok(FfiFoodItem {
+            id: normalized.food.id,
+            name: normalized.food.name,
+            brand: normalized.food.brand,
+            energy_kcal_100: normalized.nutriments_100g.energy_kcal_100,
+            protein_g_100: normalized.nutriments_100g.proteins_100,
+            carbs_g_100: normalized.nutriments_100g.carbohydrates_100,
+            fat_g_100: normalized.nutriments_100g.fat_100,
+        })
+    }
+
+    pub fn list_custom_foods(&self) -> Result<Vec<FfiFoodItem>, FfiError> {
+        let foods = self
+            .storage
+            .list_custom_foods()
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        Ok(foods
+            .into_iter()
+            .map(|w| FfiFoodItem {
+                id: w.food.id,
+                name: w.food.name,
+                brand: w.food.brand,
+                energy_kcal_100: w.nutriments.energy_kcal_100,
+                protein_g_100: w.nutriments.proteins_100,
+                carbs_g_100: w.nutriments.carbohydrates_100,
+                fat_g_100: w.nutriments.fat_100,
+            })
+            .collect())
+    }
+
+    pub fn delete_custom_food(&self, food_id: String) -> Result<bool, FfiError> {
+        self.storage
+            .delete_custom_food(&food_id)
+            .map_err(|e| FfiError::msg(e.to_string()))
+    }
+
+    pub fn lookup_barcode(&self, barcode: String) -> Result<FfiBarcodeFood, FfiError> {
+        let client = RemoteFoodClient::new(None).map_err(|e| FfiError::msg(e.to_string()))?;
+        let product = client
+            .fetch_by_barcode(&barcode, Some(&self.cache))
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        let id = product.barcode.standard_code.clone();
+        let food = crate::records::FoodRecord {
+            id: id.clone(),
+            name: product.food_name.clone(),
+            brand: product.brand.clone(),
+            source: crate::records::FoodSource::OpenFoodFacts,
+            serving_quantity: product.serving_quantity,
+            serving_unit: product.serving_unit.clone(),
+            image_url: None,
+        };
+        let _ = self.storage.insert_food(&food, &product.nutriments);
+        Ok(FfiBarcodeFood {
+            id,
+            name: product.food_name,
+            brand: product.brand,
+            energy_kcal_100: product.nutriments.energy_kcal_100,
+            protein_g_100: product.nutriments.proteins_100,
+            carbs_g_100: product.nutriments.carbohydrates_100,
+            fat_g_100: product.nutriments.fat_100,
+            from_cache: product.from_cache,
+            attribution: product.attribution,
+        })
+    }
+
+    pub fn cache_stats(&self) -> Result<FfiCacheStats, FfiError> {
+        let s = self.cache.get_cache_stats().map_err(|e| FfiError::msg(e.to_string()))?;
+        Ok(FfiCacheStats {
+            total_entries: s.total_entries as u32,
+            active_entries: s.active_entries as u32,
+            expired_entries: s.expired_entries as u32,
+        })
+    }
+
+    pub fn clear_food_cache(&self) -> Result<u32, FfiError> {
+        let n = self.cache.clear_all().map_err(|e| FfiError::msg(e.to_string()))?;
+        Ok(n as u32)
+    }
+
+    pub fn period_report(
+        &self,
+        input: FfiUserInput,
+        start_date: String,
+        end_date: String,
+        period_days: u32,
+    ) -> Result<FfiPeriodReport, FfiError> {
+        let profile = build_profile(&input)?;
+        let tdee = EnergyCalc::nasem_2023(&profile).map_err(|e| FfiError::msg(e.to_string()))?;
+        let water_goal = WaterCalc::recommend_daily_target(&profile);
+        let start = NaiveDate::parse_from_str(&start_date, "%Y-%m-%d")
+            .map_err(|_| FfiError::msg("起始日期格式无效".to_string()))?;
+        let mut daily = Vec::new();
+        let mut waters = Vec::new();
+        for i in 0..period_days {
+            let d = start + chrono::Duration::days(i as i64);
+            let ds = d.format("%Y-%m-%d").to_string();
+            if let Ok(sum) = self.storage.get_daily_summary(&input.user_id, &ds)
+                && sum.items_count > 0
+            {
+                daily.push(DailyIntakeData {
+                    date: ds.clone(),
+                    intake_kcal: sum.total_energy_kcal,
+                    protein_g: sum.total_protein_g,
+                    carbs_g: sum.total_carbs_g,
+                    fat_g: sum.total_fat_g,
+                });
+            }
+            if let Ok(w) = self.storage.get_daily_water(&input.user_id, &ds, water_goal) {
+                waters.push((ds, w.total_consumed_ml));
+            }
+        }
+        let weights = self
+            .storage
+            .get_weight_history(&input.user_id, period_days as usize)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        let weight_data: Vec<DailyWeightData> = weights
+            .into_iter()
+            .map(|(d, kg)| DailyWeightData {
+                day_offset: (d - start).num_days() as f64,
+                weight_kg: kg,
+            })
+            .collect();
+        let fasting_rows = self
+            .storage
+            .list_all_fasting(&input.user_id)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        let fasting: Vec<FastingSessionData> = fasting_rows
+            .into_iter()
+            .map(|f| FastingSessionData {
+                duration_hours: f.target_duration_minutes as f64 / 60.0,
+                target_hours: f.target_duration_minutes as f64 / 60.0,
+                is_completed: f.completed_at.is_some(),
+            })
+            .collect();
+        let goal = self
+            .storage
+            .get_user_goal(&input.user_id)
+            .map_err(|e| FfiError::msg(e.to_string()))?;
+        let target_intake = goal
+            .as_ref()
+            .map(|_| tdee - 400.0)
+            .unwrap_or(tdee);
+        let report = PeriodicAnalyticsEngine::generate_report(
+            &start_date,
+            &end_date,
+            period_days as usize,
+            tdee,
+            target_intake.max(1200.0),
+            1.6 * profile.weight_kg,
+            water_goal,
+            &daily,
+            &weight_data,
+            &waters,
+            &fasting,
+        );
+        Ok(FfiPeriodReport {
+            start_date: report.start_date,
+            end_date: report.end_date,
+            period_days: report.period_days as u32,
+            metabolic_divergence_kg: report.energy.metabolic_divergence_kg,
+            logging_adherence_pct: report.energy.logging_adherence_pct,
+            protein_compliance_pct: report.macros.protein_compliance_rate_pct,
+            water_compliance_pct: report.habits.water_compliance_rate_pct,
+            fasting_compliance_pct: report.habits.fasting_compliance_rate_pct,
+            avg_intake_kcal: report.energy.avg_daily_intake_kcal,
+            insights: report.insights,
+        })
+    }
+
+    pub fn list_users(&self) -> Result<Vec<FfiUserProfile>, FfiError> {
+        let users = self.storage.list_all_users().map_err(|e| FfiError::msg(e.to_string()))?;
+        Ok(users
+            .into_iter()
+            .map(|r| FfiUserProfile {
+                user_id: r.id,
+                name: r.name,
+                birthday: r.birthday.clone(),
+                age: age_from_birthday(&r.birthday).unwrap_or(30),
+                height_cm: r.height_cm,
+                weight_kg: r.weight_kg,
+                gender: r.gender,
+                activity_level: r.activity_level,
+            })
+            .collect())
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -550,6 +1100,110 @@ fn build_profile(input: &FfiUserInput) -> Result<UserProfile, FfiError> {
     let activity = parse_activity(&input.activity_level)?;
     UserProfile::new(input.age, input.height_cm, input.weight_kg, gender, activity)
         .map_err(|e| FfiError::msg(e.to_string()))
+}
+
+fn parse_nutrition_state(s: &str) -> NutritionState {
+    match s.to_lowercase().as_str() {
+        "deficit" | "cut" => NutritionState::CaloricDeficit,
+        "surplus" | "bulk" => NutritionState::CaloricSurplus,
+        _ => NutritionState::Maintenance,
+    }
+}
+
+fn parse_fasting_protocol(s: &str) -> FastingProtocol {
+    match s.trim() {
+        "18:6" | "18_6" => FastingProtocol::F18_6,
+        "20:4" | "20_4" => FastingProtocol::F20_4,
+        "14:10" | "14_10" => FastingProtocol::Circadian14_10,
+        _ => FastingProtocol::F16_8,
+    }
+}
+
+fn workout_from_record(r: &ActivityLogRecord) -> FfiWorkoutLog {
+    FfiWorkoutLog {
+        id: r.id.clone(),
+        activity_code: r.activity_code.clone(),
+        activity_name: r.activity_name.clone(),
+        category: r.category.clone(),
+        duration_min: r.duration_minutes,
+        met_value: r.met_value,
+        gross_kcal: r.gross_burned_kcal,
+        net_kcal: r.net_credited_kcal,
+        compensation_pct: r.compensation_ratio * 100.0,
+        date: r.date.clone(),
+    }
+}
+
+fn fasting_status_from_state(id: Option<String>, target: u32, state: &FastingState) -> FfiFastingStatus {
+    match state {
+        FastingState::Fasting {
+            elapsed_minutes,
+            remaining_minutes,
+            progress_pct,
+            ..
+        } => FfiFastingStatus {
+            session_id: id,
+            is_running: true,
+            protocol_label: format!("{} 分钟目标", target),
+            elapsed_minutes: *elapsed_minutes,
+            target_minutes: target as i64,
+            remaining_minutes: *remaining_minutes,
+            progress_pct: *progress_pct,
+            state_label: "断食中".into(),
+        },
+        FastingState::Overtime {
+            elapsed_minutes,
+            overtime_minutes,
+            progress_pct,
+            ..
+        } => FfiFastingStatus {
+            session_id: id,
+            is_running: true,
+            protocol_label: format!("{} 分钟目标", target),
+            elapsed_minutes: *elapsed_minutes,
+            target_minutes: target as i64,
+            remaining_minutes: -overtime_minutes,
+            progress_pct: *progress_pct,
+            state_label: format!("已超时 +{} 分钟", overtime_minutes),
+        },
+        FastingState::Completed {
+            total_duration_minutes,
+            reached_target,
+        } => FfiFastingStatus {
+            session_id: id,
+            is_running: false,
+            protocol_label: format!("{} 分钟目标", target),
+            elapsed_minutes: *total_duration_minutes,
+            target_minutes: target as i64,
+            remaining_minutes: 0,
+            progress_pct: 100.0,
+            state_label: if *reached_target {
+                "已完成".into()
+            } else {
+                "已结束".into()
+            },
+        },
+        FastingState::Cancelled { duration_minutes } => FfiFastingStatus {
+            session_id: id,
+            is_running: false,
+            protocol_label: format!("{} 分钟目标", target),
+            elapsed_minutes: *duration_minutes,
+            target_minutes: target as i64,
+            remaining_minutes: 0,
+            progress_pct: 0.0,
+            state_label: "已取消".into(),
+        },
+    }
+}
+
+fn dri_status_label(status: &DriStatus) -> String {
+    match status {
+        DriStatus::LowDataCoverage { coverage_pct } => format!("覆盖不足 ({:.0}%)", coverage_pct),
+        DriStatus::Deficient { .. } => "不足".into(),
+        DriStatus::Adequate { .. } => "基本充足".into(),
+        DriStatus::Optimal { .. } => "达标".into(),
+        DriStatus::Excessive { .. } => "过量".into(),
+    }
 }
 
 fn parse_activity(s: &str) -> Result<ActivityLevel, FfiError> {
@@ -650,6 +1304,38 @@ mod tests {
             .unwrap();
         let hist = session.weight_history(user.user_id.clone(), 10).unwrap();
         assert!(!hist.is_empty());
+
+        assert!(!session.list_activity_catalog().is_empty());
+        let units = session.convert_units(70.0, 170.0, 2000.0);
+        assert!(units.kg_lbs.contains("lb"));
+        let custom = session
+            .create_custom_food(FfiCustomFoodInput {
+                name: "测试鸡胸".into(),
+                brand: Some("自制".into()),
+                energy_kcal: 110.0,
+                protein_g: 23.0,
+                carbs_g: 0.0,
+                fat_g: 1.5,
+                per_100g: true,
+                serving_amount: 100.0,
+            })
+            .unwrap();
+        assert!(custom.energy_kcal_100 > 0.0);
+        assert!(!session.list_custom_foods().unwrap().is_empty());
+
+        let fid = session
+            .start_fasting(user.user_id.clone(), "16:8".into(), "2026-09-15T08:00:00Z".into())
+            .unwrap();
+        let st = session.fasting_status(user.user_id.clone()).unwrap();
+        assert!(st.is_running);
+        session
+            .complete_fasting(fid, "2026-09-15T20:00:00Z".into())
+            .unwrap();
+
+        let json = session.export_backup_json(user.user_id.clone()).unwrap();
+        assert!(json.contains("litebalance") || json.contains("user") || json.contains("{"));
+        let stats = session.cache_stats().unwrap();
+        assert_eq!(stats.total_entries, 0);
 
         session
             .log_water(user.user_id.clone(), 500, "2026-09-15T09:00:00Z".into())

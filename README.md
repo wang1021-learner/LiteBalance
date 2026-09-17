@@ -23,7 +23,7 @@
 | 计算核心 | Rust 2024：能量（NASEM 2023）、动态体重（NIH Kevin Hall）、运动补偿、目标预算、日界、宏量/碳水循环、微量 DRI、食谱、断食、饮水、趋势与报表等 |
 | 存储 | SQLite + FTS5 主库；外部食物缓存库 |
 | 外部数据 | GS1 条码校验、OpenFoodFacts 查询 |
-| 移动端方向 | UniFFI 门面 `LiteBalanceSession`（`src/ffi.rs`）+ Android Compose 壳（`apps/android`）；iOS 待 Mac（`docs/ios-next.md`） |
+| 移动端方向 | UniFFI 门面 `LiteBalanceSession`（`src/ffi.rs`）已就绪；**Android UI 壳已清空，待重新设计**；iOS 见 `docs/ios-next.md` |
 | 本机工具 | CLI：`plan` / `search` / `log-food` / `summary` / `dri` / `report` / `export` / `import` 等 |
 
 ## 快速开始
@@ -65,8 +65,7 @@ cargo run -- export
 ├── PROJECT_INTRODUCTION.md   # 架构全文
 ├── WALKTHROUGH.md            # 子系统交付与验证笔记
 ├── docs/                     # android-build / ios-next 等
-├── apps/
-│   └── android/              # Jetpack Compose 壳（Android Studio 打开此目录）
+├── bindings/                 # UniFFI 生成的 Kotlin 绑定（可供新 UI 接入）
 ├── Cargo.toml
 ├── rustfmt.toml              # max_width = 120
 └── src/                      # 扁平模块结构，全部模块直接置于此

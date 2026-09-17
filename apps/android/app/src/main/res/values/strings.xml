@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">轻衡 LiteBalance</string>
+    <string name="app_name">轻衡</string>
+    <string name="app_subtitle">临床级代谢与营养追踪</string>
 </resources>

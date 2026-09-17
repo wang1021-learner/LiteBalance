@@ -1,6 +1,7 @@
 # Android 绑定构建说明
 
-轻衡核心通过 UniFFI 导出 `LiteBalanceSession`（见 `src/ffi.rs`），供 Jetpack Compose App 调用。
+轻衡核心通过 UniFFI 导出 `LiteBalanceSession`（见 `src/ffi.rs`）。  
+**说明：原 `apps/android` Compose 壳已删除，等待重新设计 UI。** 以下步骤用于给新的 Android 工程生成 `.so` 与 Kotlin 绑定。
 
 ## 前置
 

@@ -135,6 +135,7 @@ pub use user::{ActivityLevel, Gender, HormoneProfile, ReproductiveStatus, UserPr
 
 // ---------- 移动端 UniFFI 门面（宿主 App 主要依赖面） ----------
 pub use ffi::{
-    FfiBudgetResult, FfiDailySummary, FfiEnergyComparison, FfiError, FfiFoodItem, FfiGoalInput, FfiIntakeLog,
-    FfiPlanResult, FfiUserInput, FfiUserProfile, FfiWaterSummary, FfiWeightPoint, LiteBalanceSession,
+    FfiBudgetResult, FfiCustomFoodInput, FfiDailySummary, FfiEnergyComparison, FfiError, FfiFoodItem,
+    FfiGoalInput, FfiIntakeLog, FfiPlanResult, FfiUserInput, FfiUserProfile, FfiWaterSummary, FfiWeightPoint,
+    LiteBalanceSession,
 };

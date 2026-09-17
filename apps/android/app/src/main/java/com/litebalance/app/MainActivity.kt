@@ -4,114 +4,101 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.DirectionsRun
-import androidx.compose.material.icons.rounded.GridView
-import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.Restaurant
-import androidx.compose.material.icons.rounded.WbSunny
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.litebalance.app.ui.ActivityScreen
-import com.litebalance.app.ui.DashboardScreen
-import com.litebalance.app.ui.FoodScreen
-import com.litebalance.app.ui.HealthHubScreen
-import com.litebalance.app.ui.PlanScreen
-import com.litebalance.app.ui.theme.AppColors
-import com.litebalance.app.ui.theme.LiquidGlassTokens
-import com.litebalance.app.ui.theme.ThemeLiteBalance
+import androidx.lifecycle.lifecycleScope
+import com.litebalance.app.core.CoreSession
+import com.litebalance.app.theme.LiteBalanceTheme
+import com.litebalance.app.ui.home.HomeScreen
+import com.litebalance.app.ui.navigation.AppDestination
+import com.litebalance.app.ui.navigation.AppNavigationBar
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
 
-        // 预热并打开原生 SQLite 与缓存会话
-        runCatching { CoreSession.get(this) }
+        // 后台初始化沙箱 UniFFI 会话
+        lifecycleScope.launch {
+            CoreSession.initialize(applicationContext)
+        }
 
         setContent {
-            ThemeLiteBalance {
-                val nav = rememberNavController()
-                val backStack by nav.currentBackStackEntryAsState()
-                val currentRoute = backStack?.destination?.route ?: "dashboard"
-
-                val navItems = listOf(
-                    NavigationItem("dashboard", "今日", Icons.Rounded.WbSunny),
-                    NavigationItem("food", "打卡", Icons.Rounded.Restaurant),
-                    NavigationItem("plan", "规划", Icons.Rounded.Insights),
-                    NavigationItem("activity", "活力", Icons.Rounded.DirectionsRun),
-                    NavigationItem("hub", "健康汇", Icons.Rounded.GridView),
-                )
+            LiteBalanceTheme(darkTheme = false) {
+                val snackbarHostState = remember { SnackbarHostState() }
+                var currentDestination by remember { mutableStateOf(AppDestination.HOME) }
 
                 Scaffold(
-                    bottomBar = {
-                        FloatingLiquidGlassNavBar(
-                            items = navItems,
-                            currentRoute = currentRoute,
-                            onItemClick = { route ->
-                                if (currentRoute != route) {
-                                    nav.navigate(route) {
-                                        popUpTo("dashboard") { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
-                        )
-                    },
-                ) { innerPadding ->
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = Color.White,
+                    contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                    snackbarHost = { SnackbarHost(snackbarHostState) }
+                ) { _ ->
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .background(MaterialTheme.colorScheme.background),
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        NavHost(
-                            navController = nav,
-                            startDestination = "dashboard",
-                        ) {
-                            composable("dashboard") { DashboardScreen() }
-                            composable("food") { FoodScreen() }
-                            composable("plan") { PlanScreen() }
-                            composable("activity") { ActivityScreen() }
-                            composable("hub") { HealthHubScreen() }
+                        // 直接点击切换页面（移除横向滑动手势）
+                        when (currentDestination) {
+                            AppDestination.HOME -> {
+                                HomeScreen()
+                            }
+                            AppDestination.TRENDS -> {
+                                DestinationPlaceholder(
+                                    title = "趋势 (Kevin Hall 仿真 & 周期报表)",
+                                    description = "基于 NIH Kevin Hall 动态体重常微分模型预测停滞期与真实体脂演化，结合 OLS 回归自适应纠偏。"
+                                )
+                            }
+                            AppDestination.RECORD -> {
+                                DestinationPlaceholder(
+                                    title = "记录 (食物打卡 & 运动代偿)",
+                                    description = "早/中/晚/加餐四餐明细、FTS5 离线食物检索、条形码扫码与 Pontzer 运动代偿结算。"
+                                )
+                            }
+                            AppDestination.BODY -> {
+                                DestinationPlaceholder(
+                                    title = "身体 (体重历史 & 微量雷达)",
+                                    description = "晨起体重与体脂追踪、去脂体重 (LBM) 计算及 NASEM 2023 DRI 微量元素达成度评估。"
+                                )
+                            }
+                            AppDestination.PROFILE -> {
+                                DestinationPlaceholder(
+                                    title = "个人主页 (档案与目标策略)",
+                                    description = "用户生理参数、自适应减重预算、宏量协议切换、多单位制与数据备份导出。"
+                                )
+                            }
                         }
+
+                        // 纯原生 Compose 液态玻璃悬浮底栏：直接浮动覆盖于滚动内容之上
+                        AppNavigationBar(
+                            currentRoute = currentDestination.route,
+                            onNavigate = { currentDestination = it },
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        )
                     }
                 }
             }
@@ -120,98 +107,31 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun FloatingLiquidGlassNavBar(
-    items: List<NavigationItem>,
-    currentRoute: String,
-    onItemClick: (String) -> Unit,
-) {
-    val isDark = isSystemInDarkTheme()
-    val shape = RoundedCornerShape(32.dp)
-
+private fun DestinationPlaceholder(title: String, description: String) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
+            .fillMaxSize()
+            .background(Color.White)
+            .statusBarsPadding()
+            .verticalScroll(rememberScrollState()),
+        contentAlignment = Alignment.Center
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(
-                    elevation = 12.dp,
-                    shape = shape,
-                    ambientColor = Color(0x1F000000),
-                    spotColor = Color(0x14000000),
-                )
-                .clip(shape)
-                .background(
-                    Brush.verticalGradient(
-                        if (isDark) {
-                            listOf(Color(0xE6252830), Color(0xCC1A1C22))
-                        } else {
-                            listOf(Color(0xF0FFFFFF), Color(0xE0F1F5F9))
-                        },
-                    ),
-                )
-                .border(
-                    width = 1.dp,
-                    brush = if (isDark) LiquidGlassTokens.DarkBorder else LiquidGlassTokens.LightBorder,
-                    shape = shape,
-                )
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(24.dp)
         ) {
-            items.forEach { item ->
-                val selected = currentRoute == item.route
-                val activeBgColor by animateColorAsState(
-                    targetValue = if (selected) AppColors.VitalityCoral.copy(alpha = 0.12f) else Color.Transparent,
-                    label = "navActiveBg",
-                )
-                val activeTint by animateColorAsState(
-                    targetValue = if (selected) AppColors.VitalityCoral else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                    label = "navActiveTint",
-                )
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(activeBgColor)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                        ) { onItemClick(item.route) }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = item.label,
-                            tint = activeTint,
-                            modifier = Modifier.size(23.dp),
-                        )
-                        Text(
-                            text = item.label,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                color = activeTint,
-                                fontSize = 10.5.sp,
-                            ),
-                        )
-                    }
-                }
-            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
-
-private data class NavigationItem(
-    val route: String,
-    val label: String,
-    val icon: ImageVector,
-)
