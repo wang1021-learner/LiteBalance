@@ -3,99 +3,88 @@ package com.litebalance.app.theme
 import androidx.compose.ui.graphics.Color
 
 // ===========================================================================
-// 品牌四色（整体 UI 以此为准）
+// Material Design 3 — 临床翡翠绿种子色 (Clinical Emerald: #006C4C)
 // ===========================================================================
-/** 柔和奶白 */
-val BrandCream = Color(0xFFF9F7F2)
-/** 柔和珊瑚粉 */
-val BrandCoral = Color(0xFFE8B4B8)
-/** 柔和薄荷绿 */
-val BrandMint = Color(0xFFB5D5C5)
-/** 柔和暖灰 */
-val BrandWarmGray = Color(0xFFD4CFC9)
 
-private val Ink = Color(0xFF2C322F)
-private val InkSoft = Color(0xFF5C6560)
-
-// --- Light Theme ---
-val md_theme_light_primary = Color(0xFF4A7A66)
+// --- Light Theme Colors ---
+val md_theme_light_primary = Color(0xFF006C4C)
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
-val md_theme_light_primaryContainer = BrandMint
-val md_theme_light_onPrimaryContainer = Color(0xFF1E332A)
+val md_theme_light_primaryContainer = Color(0xFF8CF8C7)
+val md_theme_light_onPrimaryContainer = Color(0xFF002114)
 
-val md_theme_light_secondary = Color(0xFF6E6A63)
+val md_theme_light_secondary = Color(0xFF006875)
 val md_theme_light_onSecondary = Color(0xFFFFFFFF)
-val md_theme_light_secondaryContainer = BrandWarmGray
-val md_theme_light_onSecondaryContainer = Color(0xFF2F2C28)
+val md_theme_light_secondaryContainer = Color(0xFF9EEFFD)
+val md_theme_light_onSecondaryContainer = Color(0xFF001F24)
 
-val md_theme_light_tertiary = Color(0xFFB57A80)
+val md_theme_light_tertiary = Color(0xFF745A00)
 val md_theme_light_onTertiary = Color(0xFFFFFFFF)
-val md_theme_light_tertiaryContainer = BrandCoral
-val md_theme_light_onTertiaryContainer = Color(0xFF4A2428)
+val md_theme_light_tertiaryContainer = Color(0xFFFFDF96)
+val md_theme_light_onTertiaryContainer = Color(0xFF241A00)
 
-val md_theme_light_error = Color(0xFFB54A4A)
-val md_theme_light_errorContainer = Color(0xFFF3D4D4)
+val md_theme_light_error = Color(0xFFBA1A1A)
+val md_theme_light_errorContainer = Color(0xFFFFDAD6)
 val md_theme_light_onError = Color(0xFFFFFFFF)
-val md_theme_light_onErrorContainer = Color(0xFF4A1818)
+val md_theme_light_onErrorContainer = Color(0xFF410002)
 
-val md_theme_light_background = BrandCream
-val md_theme_light_onBackground = Ink
-val md_theme_light_surface = BrandCream
-val md_theme_light_onSurface = Ink
-val md_theme_light_surfaceVariant = Color(0xFFECE8E1)
-val md_theme_light_onSurfaceVariant = InkSoft
-val md_theme_light_outline = BrandWarmGray
-val md_theme_light_outlineVariant = Color(0xFFE2DDD6)
+val md_theme_light_background = Color(0xFFFBFDFA)
+val md_theme_light_onBackground = Color(0xFF191C1B)
+val md_theme_light_surface = Color(0xFFFBFDFA)
+val md_theme_light_onSurface = Color(0xFF191C1B)
+val md_theme_light_surfaceVariant = Color(0xFFDBE5DF)
+val md_theme_light_onSurfaceVariant = Color(0xFF404943)
+val md_theme_light_outline = Color(0xFF707973)
+val md_theme_light_outlineVariant = Color(0xFFBFC9C3)
 
 val md_theme_light_surfaceContainerLowest = Color(0xFFFFFFFF)
-val md_theme_light_surfaceContainerLow = Color(0xFFFCFBF8)
-val md_theme_light_surfaceContainer = Color(0xFFF3F0EA)
-val md_theme_light_surfaceContainerHigh = Color(0xFFEDE9E2)
-val md_theme_light_surfaceContainerHighest = Color(0xFFE6E2DA)
+val md_theme_light_surfaceContainerLow = Color(0xFFF5F7F4)
+val md_theme_light_surfaceContainer = Color(0xFFEFF1EE)
+val md_theme_light_surfaceContainerHigh = Color(0xFFE9EBE8)
+val md_theme_light_surfaceContainerHighest = Color(0xFFE3E5E3)
 
-// --- Dark Theme ---
-val md_theme_dark_primary = BrandMint
-val md_theme_dark_onPrimary = Color(0xFF1A2E25)
-val md_theme_dark_primaryContainer = Color(0xFF4A7A66)
-val md_theme_dark_onPrimaryContainer = Color(0xFFE4F0EA)
+// --- Dark Theme Colors ---
+val md_theme_dark_primary = Color(0xFF70DBAC)
+val md_theme_dark_onPrimary = Color(0xFF003826)
+val md_theme_dark_primaryContainer = Color(0xFF005138)
+val md_theme_dark_onPrimaryContainer = Color(0xFF8CF8C7)
 
-val md_theme_dark_secondary = BrandWarmGray
-val md_theme_dark_onSecondary = Color(0xFF2A2824)
-val md_theme_dark_secondaryContainer = Color(0xFF4A4742)
-val md_theme_dark_onSecondaryContainer = Color(0xFFE8E4DC)
+val md_theme_dark_secondary = Color(0xFF82D3E0)
+val md_theme_dark_onSecondary = Color(0xFF00363D)
+val md_theme_dark_secondaryContainer = Color(0xFF004F58)
+val md_theme_dark_onSecondaryContainer = Color(0xFF9EEFFD)
 
-val md_theme_dark_tertiary = BrandCoral
-val md_theme_dark_onTertiary = Color(0xFF3A1C1C)
-val md_theme_dark_tertiaryContainer = Color(0xFF7A4548)
-val md_theme_dark_onTertiaryContainer = Color(0xFFFFE8EA)
+val md_theme_dark_tertiary = Color(0xFFE9C349)
+val md_theme_dark_onTertiary = Color(0xFF3D2F00)
+val md_theme_dark_tertiaryContainer = Color(0xFF574500)
+val md_theme_dark_onTertiaryContainer = Color(0xFFFFDF96)
 
-val md_theme_dark_error = Color(0xFFE8B4B8)
-val md_theme_dark_errorContainer = Color(0xFF7A3030)
-val md_theme_dark_onError = Color(0xFF3A1010)
+val md_theme_dark_error = Color(0xFFFFB4AB)
+val md_theme_dark_errorContainer = Color(0xFF93000A)
+val md_theme_dark_onError = Color(0xFF690005)
 val md_theme_dark_onErrorContainer = Color(0xFFFFDAD6)
 
-val md_theme_dark_background = Color(0xFF1A1B19)
-val md_theme_dark_onBackground = Color(0xFFE8E4DC)
-val md_theme_dark_surface = Color(0xFF1A1B19)
-val md_theme_dark_onSurface = Color(0xFFE8E4DC)
-val md_theme_dark_surfaceVariant = Color(0xFF3A3C38)
-val md_theme_dark_onSurfaceVariant = Color(0xFFD4CFC9)
-val md_theme_dark_outline = Color(0xFF8A8680)
-val md_theme_dark_outlineVariant = Color(0xFF3A3C38)
+val md_theme_dark_background = Color(0xFF111413)
+val md_theme_dark_onBackground = Color(0xFFE1E3E0)
+val md_theme_dark_surface = Color(0xFF111413)
+val md_theme_dark_onSurface = Color(0xFFE1E3E0)
+val md_theme_dark_surfaceVariant = Color(0xFF3F4945)
+val md_theme_dark_onSurfaceVariant = Color(0xFFBFC9C3)
+val md_theme_dark_outline = Color(0xFF89938E)
+val md_theme_dark_outlineVariant = Color(0xFF3F4945)
 
-val md_theme_dark_surfaceContainerLowest = Color(0xFF121311)
-val md_theme_dark_surfaceContainerLow = Color(0xFF222421)
-val md_theme_dark_surfaceContainer = Color(0xFF262824)
-val md_theme_dark_surfaceContainerHigh = Color(0xFF31332F)
-val md_theme_dark_surfaceContainerHighest = Color(0xFF3C3E3A)
+val md_theme_dark_surfaceContainerLowest = Color(0xFF0C0F0E)
+val md_theme_dark_surfaceContainerLow = Color(0xFF191C1B)
+val md_theme_dark_surfaceContainer = Color(0xFF1D201F)
+val md_theme_dark_surfaceContainerHigh = Color(0xFF272B29)
+val md_theme_dark_surfaceContainerHighest = Color(0xFF323634)
 
-// 语义色（四色家族内）
-val MacroProteinColor = Color(0xFF4A7A66)
-val MacroCarbColor = Color(0xFFC47A80)
-val MacroFatColor = Color(0xFFB8A878)
-val WaterHydrationColor = Color(0xFF6A9B8C)
-val FastingPurpleColor = Color(0xFF8A7A78)
+// 临床代谢与营养语义色
+val MacroProteinColor = Color(0xFF2A9D8F)
+val MacroCarbColor = Color(0xFFE07A5F)
+val MacroFatColor = Color(0xFFE9C46A)
+val WaterHydrationColor = Color(0xFF0288D1)
+val FastingPurpleColor = Color(0xFF7E57C2)
 
-val CaloricDeficitColor = Color(0xFF4A7A66)
-val CaloricSurplusColor = Color(0xFFB57A80)
-val CaloricDangerColor = Color(0xFFA04545)
+val CaloricDeficitColor = Color(0xFF10B981)
+val CaloricSurplusColor = Color(0xFFF59E0B)
+val CaloricDangerColor = Color(0xFFEF4444)
